@@ -41,7 +41,7 @@ save_data = load_or_create_save()
 @app.route('/')
 def home():
     pokemon_list = []
-    with open('pokeapi/data/v2/csv/pokemon.csv', newline='') as csvfile:
+    with open('pokeapi/data/v2/csv/pokemon_species.csv', newline='') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             if int(row['id']) < 10000:

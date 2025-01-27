@@ -7,8 +7,7 @@
     <style>
         body {
             display: flex;
-            flex-direction: column; /* Stack grids vertically */
-            align-items: center;
+            flex-direction: row; /* Align grid and sidebar horizontally */
             font-family: Arial, sans-serif;
             background-color: #f8f9fa;
             margin: 0;
@@ -22,11 +21,31 @@
             color: #333;
         }
 
+        /* Sidebar Styling */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            width: 30%;
+            position: sticky;
+            top: 20px;
+            margin-left: auto;
+            margin-right: auto;
+            background-color: #fff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            height: 95vh;
+        }
+
+        .sidebar h2, p {
+            margin-top: 10px;
+            margin-left: 10px;
+        }
+
         .grid-container {
             display: grid;
             grid-template-columns: repeat(6, 1fr);
-            gap: 0px; /* No gap for seamless grid */
-            max-width: 60%; /* Restrict to half the screen */
+            gap: 10px;
+            flex-grow: 1; /* Allow grid to take up remaining space */
             background-color: #fff;
             border: 1px solid #ddd;
             border-radius: 8px;
@@ -39,26 +58,27 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 0; /* Remove internal padding */
-            width: 110px; /* Set a constant width */
-            height: 110px; /* Set a constant height */
-            cursor: pointer; /* Make it clickable */
-            transition: background-color 0.3s; /* Smooth transition */
+            padding: 0;
+            width: 110px;
+            height: 110px;
+            cursor: pointer;
+            transition: background-color 0.3s;
             border: 2px solid transparent;
+            position: relative; /* For positioning the info icon */
         }
 
         .grid-item:hover {
-            border: 2px solid #007bff; /* Border on hover */
+            border: 2px solid #007bff;
         }
 
         .grid-item.caught {
-            background-color: #d4edda; /* Background color for caught pokemon */
+            background-color: #d4edda;
         }
 
         .grid-item img {
-            width: 64px; /* Keep small pixel art size */
-            height: 64px; /* Set a constant height */
-            object-fit: cover; /* Ensure the image covers the area */
+            width: 64px;
+            height: 64px;
+            object-fit: cover;
         }
 
         .grid-item p {
@@ -78,8 +98,30 @@
             font-size: 0.75em;
             color: #777;
         }
+
+        .info-icon {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            font-size: 1.2em;
+            color: #007bff;
+            cursor: pointer;
+            display: none;
+        }
+
+        .grid-item:hover .info-icon {
+            display: block; /* Show icon on hover */
+        }
+
+
+        .pokemon-info.active {
+            display: block;
+        }
+
     </style>
     <script>
+        let currentPokemon = null;
+
         function toggleCaught(event) {
             const item = event.currentTarget;
             item.classList.toggle('caught');
@@ -101,25 +143,44 @@
                 console.error('Error:', error);
             });
         }
+
+        function showPokemonInfo(pokemon) {
+            currentPokemon = pokemon;
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.querySelector('.pokemon-info .name').textContent = pokemon.charAt(0).toUpperCase() + pokemon.slice(1);
+            sidebar.querySelector('.pokemon-info .details').textContent = `Some detailed info about ${pokemon}...`;  // You can add more info here
+            sidebar.querySelector('.pokemon-info').classList.add('active');
+        }
     </script>
 </head>
 <body>
-    <h1>Pokedex Tracker</h1>
-    {% set start_id = 1 %}
-    <div class="grid-container">
-        <h2 style="grid-column: 1 / -1;">{{ start_id }} - {{ start_id + 29 }}</h2>
-        {% for pokemon in pokemons %}
-            <div class="grid-item {% if pokemon.caught | lower == "true" %}caught{% endif %}" onclick="toggleCaught(event)">
-                <p class="identifier">{{ pokemon.identifier | capitalize }}</p>
-                <img src="{{ pokemon.image_url }}" alt="{{ pokemon.identifier }}">
-                <p class="id"> #{{ pokemon.id }}</p>
-            </div>
-            {% if loop.index % 30 == 0 %}
-                {% set start_id = pokemon.id | int + 1 %}
-                </div><div class="grid-container">
-                <h2 style="grid-column: 1 / -1;">{{ start_id }} - {{ start_id + 29 }}</h2>
-            {% endif %}
-        {% endfor %}
+    <div>
+        <h1>Pokedex Tracker</h1>
+        {% set start_id = 1 %}
+        <div class="grid-container">
+            <h2 style="grid-column: 1 / -1;">{{ start_id }} - {{ start_id + 29 }}</h2>
+            {% for pokemon in pokemons %}
+                <div class="grid-item {% if pokemon.caught | lower == 'true' %}caught{% endif %}" onclick="toggleCaught(event)">
+                    <p class="identifier">{{ pokemon.identifier | capitalize }}</p>
+                    <img src="{{ pokemon.image_url }}" alt="{{ pokemon.identifier }}">
+                    <p class="id">#{{ pokemon.id }}</p>
+                    <span class="info-icon" onclick="event.stopPropagation(); showPokemonInfo('{{ pokemon.identifier }}')">ℹ️</span>
+                </div>
+                {% if loop.index % 30 == 0 %}
+                    {% set start_id = pokemon.id | int + 1 %}
+                    </div><div class="grid-container">
+                    <h2 style="grid-column: 1 / -1;">{{ start_id }} - {{ start_id + 29 }}</h2>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="pokemon-info">
+            <h2 class="name">Pokemon Information</h2>
+            <p class="details"></p>
+        </div>
     </div>
 </body>
 </html>
