@@ -83,17 +83,33 @@
         function toggleCaught(event) {
             const item = event.currentTarget;
             item.classList.toggle('caught');
-            // Add your Flask behavior here, e.g., send an AJAX request to update the server
+            const identifier = item.querySelector('.identifier').textContent.trim().toLowerCase();
+            const caught = item.classList.contains('caught');
+
+            fetch('/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ identifier: identifier, caught: caught }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
         }
     </script>
 </head>
 <body>
-    <h1>Pokemon Grid</h1>
+    <h1>Pokedex Tracker</h1>
     {% set start_id = 1 %}
     <div class="grid-container">
         <h2 style="grid-column: 1 / -1;">{{ start_id }} - {{ start_id + 29 }}</h2>
         {% for pokemon in pokemons %}
-            <div class="grid-item" onclick="toggleCaught(event)">
+            <div class="grid-item {% if pokemon.caught | lower == "true" %}caught{% endif %}" onclick="toggleCaught(event)">
                 <p class="identifier">{{ pokemon.identifier | capitalize }}</p>
                 <img src="{{ pokemon.image_url }}" alt="{{ pokemon.identifier }}">
                 <p class="id"> #{{ pokemon.id }}</p>
