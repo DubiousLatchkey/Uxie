@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokemon Grid</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column; /* Stack grids vertically */
+            align-items: center;
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            width: 100%;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0px; /* No gap for seamless grid */
+            max-width: 60%; /* Restrict to half the screen */
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .grid-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0; /* Remove internal padding */
+            width: 110px; /* Set a constant width */
+            height: 110px; /* Set a constant height */
+            cursor: pointer; /* Make it clickable */
+            transition: background-color 0.3s; /* Smooth transition */
+            border: 2px solid transparent;
+        }
+
+        .grid-item:hover {
+            border: 2px solid #007bff; /* Border on hover */
+        }
+
+        .grid-item.caught {
+            background-color: #d4edda; /* Background color for caught pokemon */
+        }
+
+        .grid-item img {
+            width: 64px; /* Keep small pixel art size */
+            height: 64px; /* Set a constant height */
+            object-fit: cover; /* Ensure the image covers the area */
+        }
+
+        .grid-item p {
+            margin: 0;
+            font-size: 0.85em;
+            color: #555;
+            text-align: center;
+        }
+
+        .grid-item .identifier {
+            font-size: 1em;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .grid-item .id {
+            font-size: 0.75em;
+            color: #777;
+        }
+    </style>
+    <script>
+        function toggleCaught(event) {
+            const item = event.currentTarget;
+            item.classList.toggle('caught');
+            // Add your Flask behavior here, e.g., send an AJAX request to update the server
+        }
+    </script>
+</head>
+<body>
+    <h1>Pokemon Grid</h1>
+    {% set start_id = 1 %}
+    <div class="grid-container">
+        <h2 style="grid-column: 1 / -1;">{{ start_id }} - {{ start_id + 29 }}</h2>
+        {% for pokemon in pokemons %}
+            <div class="grid-item" onclick="toggleCaught(event)">
+                <p class="identifier">{{ pokemon.identifier | capitalize }}</p>
+                <img src="{{ pokemon.image_url }}" alt="{{ pokemon.identifier }}">
+                <p class="id"> #{{ pokemon.id }}</p>
+            </div>
+            {% if loop.index % 30 == 0 %}
+                {% set start_id = pokemon.id | int + 1 %}
+                </div><div class="grid-container">
+                <h2 style="grid-column: 1 / -1;">{{ start_id }} - {{ start_id + 29 }}</h2>
+            {% endif %}
+        {% endfor %}
+    </div>
+</body>
+</html>
