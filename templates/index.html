@@ -34,13 +34,67 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
             height: 95vh;
+            align-items: center;
         }
 
-        .sidebar h2, p {
+        .sidebar h2 {
             margin-top: 10px;
-            margin-left: 10px;
+            margin-bottom: 10px;
+            text-align: center;
         }
 
+        .pokemon-info {
+            display: flex;
+            flex-direction: column;
+            width: 85%;
+        }
+
+        .generations {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: stretch;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+
+        .methods {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        .generations .selector {
+            margin: 0px 0px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            background-color: #f1f1f1;
+            padding-top: 8px;
+            padding-bottom: 8px;
+            text-align: center;
+            flex-grow: 1;            /* Allow each child to grow and take up equal space */
+            flex-shrink: 0;          /* Prevent child elements from shrinking */
+            flex-basis: 0;           /* Allow child elements to have equal width */
+            box-sizing: border-box;  /* Ensure padding and borders do not affect the width */
+        }
+
+        .methods .selector {
+            margin: 0px 0px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            background-color: #f1f1f1;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .generations .selector:hover, .methods .selector:hover {
+            background-color: #d4edda;
+        }
+
+        /* Grid container */
         .grid-container {
             display: grid;
             grid-template-columns: repeat(6, 1fr);
@@ -161,12 +215,14 @@
                 .then(data => {
 
                     Object.keys(data).forEach(gen => {
-                        const button = document.createElement('button');
+                        const button = document.createElement('div');
                         button.textContent = gen;
+                        button.classList.add('selector');
                         button.onclick = () => {
                             methods.innerHTML = '';
                             data[gen].forEach(method => {
-                                const methodItem = document.createElement('p');
+                                const methodItem = document.createElement('div');
+                                methodItem.classList.add('selector');
                                 methodItem.textContent = method;
                                 methods.appendChild(methodItem);
                             });
