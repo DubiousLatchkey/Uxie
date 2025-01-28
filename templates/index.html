@@ -90,7 +90,7 @@
             box-sizing: border-box;
         }
 
-        .generations .selector:hover, .methods .selector:hover {
+        .generations .selector:hover, .methods .selector:hover, .generations .selected, .methods .selected {
             background-color: #d4edda;
         }
 
@@ -175,19 +175,21 @@
     </style>
     <script>
         let currentPokemon = null;
+        let currentGeneration = null;
+        let currentMethod = null;
 
-        function toggleCaught(event) {
-            const item = event.currentTarget;
-            item.classList.toggle('caught');
-            const identifier = item.querySelector('.identifier').textContent.trim().toLowerCase();
-            const caught = item.classList.contains('caught');
+        function savePokemonData(data) {
+            if (!data.identifier) {
+                console.error('Identifier is required');
+                return;
+            }
 
             fetch('/save', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ identifier: identifier, caught: caught }),
+                body: JSON.stringify(data),
             })
             .then(response => response.json())
             .then(data => {
@@ -196,6 +198,15 @@
             .catch((error) => {
                 console.error('Error:', error);
             });
+        }
+
+        function toggleCaught(event) {
+            const item = event.currentTarget;
+            item.classList.toggle('caught');
+            const identifier = item.querySelector('.identifier').textContent.trim().toLowerCase();
+            const caught = item.classList.contains('caught');
+
+            savePokemonData({ identifier: identifier, caught: caught });
         }
 
         function showPokemonInfo(pokemon) {
@@ -213,22 +224,60 @@
             fetch(`/huntMethods/${pokemon}`)
                 .then(response => response.json())
                 .then(data => {
-
+                    
                     Object.keys(data).forEach(gen => {
                         const button = document.createElement('div');
                         button.textContent = gen;
                         button.classList.add('selector');
                         button.onclick = () => {
                             methods.innerHTML = '';
+                            generations.querySelectorAll('.selector').forEach(g => g.classList.remove('selected'));
+                            button.classList.add('selected');
+                            currentGeneration = gen;
+
                             data[gen].forEach(method => {
                                 const methodItem = document.createElement('div');
                                 methodItem.classList.add('selector');
                                 methodItem.textContent = method;
+                                if(method == currentMethod){
+                                    methodItem.classList.add('selected');
+                                }
+                                methodItem.onclick = () => {
+                                    methods.querySelectorAll('.selector').forEach(m => m.classList.remove('selected'));
+                                    methodItem.classList.add('selected');
+                                    currentMethod = method;
+                                    savePokemonData({ 
+                                        identifier: currentPokemon, 
+                                        catchGeneration: gen, 
+                                        huntMethod: method 
+                                    });
+                                };
                                 methods.appendChild(methodItem);
                             });
                         };
                         generations.appendChild(button);
                     });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            
+            // Display data if it already exists
+            fetch(`/getPokemonData/${pokemon}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.catchGeneration && data.huntMethod) {
+                        currentGeneration = data.catchGeneration;
+                        currentMethod = data.huntMethod;
+                        const generationButton = Array.from(generations.children).find(button => button.textContent === data.catchGeneration);
+                        if (generationButton) {
+                            generationButton.click();
+                            const methodButton = Array.from(methods.children).find(button => button.textContent === data.huntMethod);
+                            if (methodButton) {
+                                methodButton.classList.add('selected');
+                            }
+                        }
+                    }
                 })
                 .catch(error => {
                     console.error('Error:', error);

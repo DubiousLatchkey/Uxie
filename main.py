@@ -64,7 +64,7 @@ def home():
                 row['image_url'] = f"static/sprites/{row['id']}.png"
 
                 # Get if caught
-                if(row['identifier'] in save_data):
+                if(row['identifier'] in save_data and 'caught' in save_data[row['identifier']]):
                     row['caught'] = save_data[row['identifier']]['caught']
                 else:
                     row['caught'] = False
@@ -73,6 +73,7 @@ def home():
 
         return render_template('index.html', pokemons=pokemon_list)
 
+# Writes data to save.json
 @app.route('/save', methods=['POST'])
 def save_pokemon_data():
     data = request.get_json()
@@ -92,6 +93,14 @@ def save_pokemon_data():
         json.dump(save_data, f)
     
     return redirect(url_for('home'))
+
+# Fetches saved data about pokemon
+@app.route('/getPokemonData/<identifier>', methods=['GET'])
+def get_pokemon_data(identifier):
+    if identifier in save_data:
+        return jsonify(save_data[identifier])
+    else:
+        return jsonify({"message": "Pokemon not found"})
 
 # Get shiny encounter methods
 @app.route('/huntMethods/<pokemon_name>', methods=['GET'])
