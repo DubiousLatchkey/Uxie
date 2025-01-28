@@ -146,9 +146,40 @@
 
         function showPokemonInfo(pokemon) {
             currentPokemon = pokemon;
+
             const sidebar = document.querySelector('.sidebar');
+            const details = sidebar.querySelector('.pokemon-info .details');
+            const generations = sidebar.querySelector('.pokemon-info .generations');
+            const methods = sidebar.querySelector('.pokemon-info .methods');
+
+            details.innerHTML = '';
+            generations.innerHTML = '';
+            methods.innerHTML = '';
+
+            fetch(`/huntMethods/${pokemon}`)
+                .then(response => response.json())
+                .then(data => {
+
+                    Object.keys(data).forEach(gen => {
+                        const button = document.createElement('button');
+                        button.textContent = gen;
+                        button.onclick = () => {
+                            methods.innerHTML = '';
+                            data[gen].forEach(method => {
+                                const methodItem = document.createElement('p');
+                                methodItem.textContent = method;
+                                methods.appendChild(methodItem);
+                            });
+                        };
+                        generations.appendChild(button);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+
             sidebar.querySelector('.pokemon-info .name').textContent = pokemon.charAt(0).toUpperCase() + pokemon.slice(1);
-            sidebar.querySelector('.pokemon-info .details').textContent = `Some detailed info about ${pokemon}...`;  // You can add more info here
+            //sidebar.querySelector('.pokemon-info .details').textContent = `Some detailed info about ${pokemon}...`;  // You can add more info here
             sidebar.querySelector('.pokemon-info').classList.add('active');
         }
     </script>
@@ -179,6 +210,8 @@
     <div class="sidebar">
         <div class="pokemon-info">
             <h2 class="name">Pokemon Information</h2>
+            <div class="generations"></div>
+            <div class="methods"></div>
             <p class="details"></p>
         </div>
     </div>

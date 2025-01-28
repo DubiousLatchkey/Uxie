@@ -23,6 +23,7 @@ def check_and_copy_sprites():
                 shutil.copy(full_file_name, destination_folder)
 
 
+# DEPRECATED: Encounters have not been updated by pokeapi
 # Update Encounters (process table and make pokemon indexable json)
 def load_encounters():
     encounters_file = 'pokeapi/data/v2/csv/encounters.csv'
@@ -95,8 +96,10 @@ def load_encounters():
     
     return pokemonToEncounters
 
-encounters_data = load_encounters()
-with open('static/encounters.json', 'w', encoding='utf-8') as jsonfile:
-    json.dump(encounters_data, jsonfile, ensure_ascii=False, indent=4)
+
+
+# encounters_data = load_encounters()
+# with open('static/encounters.json', 'w', encoding='utf-8') as jsonfile:
+#     json.dump(encounters_data, jsonfile, ensure_ascii=False, indent=4)
 
 check_and_copy_sprites()
