@@ -7,22 +7,6 @@ import json
 app = Flask(__name__)
 
 
-# Update sprites assets
-def check_and_copy_sprites():
-    source_folder = 'pokeapi/data/v2/sprites/sprites/pokemon'
-    destination_folder = 'static/sprites'
-    
-    if not os.path.exists(destination_folder):
-        os.makedirs(destination_folder)
-    
-    source_files = set(os.listdir(source_folder))
-    destination_files = set(os.listdir(destination_folder))
-    
-    if source_files != destination_files:
-        for file_name in source_files:
-            full_file_name = os.path.join(source_folder, file_name)
-            if os.path.isfile(full_file_name):
-                shutil.copy(full_file_name, destination_folder)
 
 def load_or_create_save():
     save_file = 'save.json'
@@ -35,7 +19,7 @@ def load_or_create_save():
             json.dump(save_data, f)
     return save_data
 
-check_and_copy_sprites()
+
 save_data = load_or_create_save()
 
 @app.route('/')
