@@ -7,7 +7,7 @@ import json
 
 # Update Sprites
 def check_and_copy_sprites():
-    source_folder = 'pokeapi/data/v2/sprites/sprites/pokemon'
+    source_folder = 'pokeapi/data/v2/sprites/sprites/pokemon/shiny'
     destination_folder = 'static/sprites'
     
     if not os.path.exists(destination_folder):

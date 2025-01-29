@@ -91,14 +91,14 @@
         }
 
         .generations .selector:hover, .methods .selector:hover, .generations .selected, .methods .selected {
-            background-color: #d4edda;
+            background-color: #6ddd87;
         }
 
         /* Grid container */
         .grid-container {
             display: grid;
             grid-template-columns: repeat(6, 1fr);
-            gap: 10px;
+            gap: 0px;
             flex-grow: 1; /* Allow grid to take up remaining space */
             background-color: #fff;
             border: 1px solid #ddd;
@@ -125,8 +125,12 @@
             border: 2px solid #007bff;
         }
 
+        .grid-item.has-method {
+            background-color: #cfcfcf;
+        }
+
         .grid-item.caught {
-            background-color: #d4edda;
+            background-color: #6ddd87;
         }
 
         .grid-item img {
@@ -206,12 +210,15 @@
             const identifier = item.querySelector('.identifier').textContent.trim().toLowerCase();
             const caught = item.classList.contains('caught');
 
+
             savePokemonData({ identifier: identifier, caught: caught });
         }
 
-        function showPokemonInfo(pokemon) {
+        function showPokemonInfo(pokemon, event) {
             currentPokemon = pokemon;
+            currentMethod = null;
 
+            const gridItem = event.currentTarget.parentElement;
             const sidebar = document.querySelector('.sidebar');
             const details = sidebar.querySelector('.pokemon-info .details');
             const generations = sidebar.querySelector('.pokemon-info .generations');
@@ -224,16 +231,26 @@
             fetch(`/huntMethods/${pokemon}`)
                 .then(response => response.json())
                 .then(data => {
-                    
+                    firstButton = null;
+                    secondButton = null;
                     Object.keys(data).forEach(gen => {
                         const button = document.createElement('div');
-                        button.textContent = gen;
+                        if(gen == '0') button.textContent = "Go";
+                        else button.textContent = gen;
+                        button.id = gen;
                         button.classList.add('selector');
                         button.onclick = () => {
                             methods.innerHTML = '';
                             generations.querySelectorAll('.selector').forEach(g => g.classList.remove('selected'));
                             button.classList.add('selected');
                             currentGeneration = gen;
+
+                            if (!data[gen].includes('Event/Guarantee')) {
+                                data[gen].unshift('Event/Guarantee');
+                            }
+                            if (!data[gen].includes('Randomly Found')) {
+                                data[gen].unshift('Randomly Found');
+                            }
 
                             data[gen].forEach(method => {
                                 const methodItem = document.createElement('div');
@@ -251,16 +268,28 @@
                                         catchGeneration: gen, 
                                         huntMethod: method 
                                     });
+                                    if (!gridItem.classList.contains('caught')) {
+                                        gridItem.classList.add('has-method');
+                                    }
                                 };
                                 methods.appendChild(methodItem);
                             });
+                        
                         };
+                        if (!firstButton) {
+                            firstButton = button;
+                        }
+                        else if (!secondButton) {
+                            secondButton = button;
+                        }
                         generations.appendChild(button);
                     });
+                    if(!currentMethod) secondButton.click(); // Ignore the first button which is always pokemon go
                 })
                 .catch(error => {
                     console.error('Error:', error);
                 });
+            
             
             // Display data if it already exists
             fetch(`/getPokemonData/${pokemon}`)
@@ -269,7 +298,7 @@
                     if (data.catchGeneration && data.huntMethod) {
                         currentGeneration = data.catchGeneration;
                         currentMethod = data.huntMethod;
-                        const generationButton = Array.from(generations.children).find(button => button.textContent === data.catchGeneration);
+                        const generationButton = Array.from(generations.children).find(button => button.id == data.catchGeneration);
                         if (generationButton) {
                             generationButton.click();
                             const methodButton = Array.from(methods.children).find(button => button.textContent === data.huntMethod);
@@ -296,11 +325,11 @@
         <div class="grid-container">
             <h2 style="grid-column: 1 / -1;">{{ start_id }} - {{ start_id + 29 }}</h2>
             {% for pokemon in pokemons %}
-                <div class="grid-item {% if pokemon.caught | lower == 'true' %}caught{% endif %}" onclick="toggleCaught(event)">
+                <div class="grid-item {% if pokemon.caught | lower == 'true' %}caught{% elif pokemon.method | lower == 'true' %}has-method{% endif %}" onclick="toggleCaught(event)">
                     <p class="identifier">{{ pokemon.identifier | capitalize }}</p>
-                    <img src="{{ pokemon.image_url }}" alt="{{ pokemon.identifier }}">
+                    <img src="{{ pokemon.image_url }}" alt="{{ pokemon.identifier }}" loading="lazy">
                     <p class="id">#{{ pokemon.id }}</p>
-                    <span class="info-icon" onclick="event.stopPropagation(); showPokemonInfo('{{ pokemon.identifier }}')">ℹ️</span>
+                    <span class="info-icon" onclick="event.stopPropagation(); showPokemonInfo('{{ pokemon.identifier }}', event)">ℹ️</span>
                 </div>
                 {% if loop.index % 30 == 0 %}
                     {% set start_id = pokemon.id | int + 1 %}

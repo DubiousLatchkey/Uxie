@@ -9,13 +9,14 @@ app = Flask(__name__)
 generationShinyEncounterMethods = {
     1: [],
     2: ["Coin Case Glitch"],
-    3: ["Gen 3 Wild RNG", "Gen 3 Stationary RNG", "Glitzer Popping"],
-    4: ["Gen 4 Wild RNG", "Gen 4 Stationary RNG", "Gen 4 Egg RNG", "Cute Charm"],
+    3: ["Gen 3 Wild RNG", "Gen 3 Stationary RNG", "Glitzer Popping", "Other RNG (bonus disc, etc)"],
+    4: ["Gen 4 Wild RNG", "Gen 4 Stationary RNG", "Gen 4 Egg RNG", "Cute Charm" , "Other RNG (Roaming, etc)", "Prev Gen Evo"],
     5: ["Gen 5 Wild RNG", "Gen 5 Stationary RNG", "Gen 5 Egg RNG"],
-    6: [],
+    6: ["Prev Gen Evo"],
     7: ["Gen 7 Wild RNG", "Gen 7 Stationary/Gift RNG", "Gen 7 Egg RNG"],
-    8: ["Raid RNG", "Dynamax Adventure", "Full Odds"],
-    9: ["Masuda Method", "Mass Outbreak", "Sandwich (No Outbreak)"]
+    8: ["Raid RNG", "Dynamax Adventure", "Full Odds", "BDSP Blink RNG", "PLA RNG", "Prev Gen Evo"],
+    9: ["Masuda Method", "Mass Outbreak", "Sandwich (No Outbreak)", "Prev Gen Evo"],
+    0: ["Community Day"] # Pokemon Go
 }
 
 def load_or_create_save():
@@ -69,6 +70,12 @@ def home():
                 else:
                     row['caught'] = False
 
+                # Get if method
+                if(row['identifier'] in save_data and 'huntMethod' in save_data[row['identifier']]):
+                    row['method'] = True
+                else:
+                    row['method'] = False
+
                 pokemon_list.append(row)
 
         return render_template('index.html', pokemons=pokemon_list)
@@ -111,6 +118,8 @@ def get_encounter_info(pokemon_name):
         for gen in range(generation, max(generationShinyEncounterMethods.keys()) + 1):
             methods = generationShinyEncounterMethods.get(gen, [])
             shiny_methods[gen] = methods
+
+        shiny_methods[0] = generationShinyEncounterMethods[0]
         return jsonify(shiny_methods)
     else:
         return jsonify({"error": "Pokemon not found"}), 404
