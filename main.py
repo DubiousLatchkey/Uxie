@@ -62,7 +62,8 @@ def home():
         reader = csv.DictReader(csvfile)
         for row in reader:
             if int(row['id']) < 10000:
-                row['image_url'] = f"static/sprites/{row['id']}.png"
+                #row['image_url'] = f"static/sprites/{row['id']}.png"
+                row['sprite_id'] = "sprite-" + row['id']
 
                 # Get if caught
                 if(row['identifier'] in save_data and 'caught' in save_data[row['identifier']]):

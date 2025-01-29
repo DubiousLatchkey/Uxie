@@ -4,11 +4,14 @@ import csv
 import os
 import shutil
 import json
+from PIL import Image, UnidentifiedImageError, ImageFile
+import base64
+import io
 
 # Update Sprites
 def check_and_copy_sprites():
     source_folder = 'pokeapi/data/v2/sprites/sprites/pokemon/shiny'
-    destination_folder = 'static/sprites'
+    destination_folder = 'static/spritesPreProcessed'
     
     if not os.path.exists(destination_folder):
         os.makedirs(destination_folder)
@@ -96,6 +99,74 @@ def load_encounters():
     
     return pokemonToEncounters
 
+# No good sprite generator?  Fine, I'll do it myself
+def make_spritesheet():
+    css = ""
+    sprites = []
+    spritesFolder = os.path.join('static', 'spritesPreProcessed')
+
+    # load sprites from static/spritesPreProcessed
+    for file in os.listdir(spritesFolder):
+        numbersInFilename = ''.join([i for i in filter(str.isdigit, file)])
+        if(len(numbersInFilename) == 0):
+            numbersInFilename = 0
+        else:
+            numbersInFilename = int(numbersInFilename)
+        if file.endswith('.png') and numbersInFilename < 10000:
+            try:
+                sprite = Image.open(os.path.join(spritesFolder, file))
+                sprites.append((sprite, file[:-4]))
+            except UnidentifiedImageError:
+                print(f"error: PIL could not open {file}, attempting to load truncated")
+
+                ImageFile.LOAD_TRUNCATED_IMAGES = True
+                with open(os.path.join(spritesFolder, file), "rb") as image_file:
+                    encoded_string = base64.b64encode(image_file.read())
+                    image_data = base64.b64decode(encoded_string)
+                    sprite = Image.open(io.BytesIO(image_data)).convert('RGBA')
+                
+                sprites.append((sprite, file[:-4]))
+                ImageFile.LOAD_TRUNCATED_IMAGES = False
+                
+
+
+    # sort sprites by size from biggest to smallest
+    sprites.sort(key=lambda x: x[0].size[0] * x[0].size[1], reverse=True)
+
+    # create spritesheet
+    sheet_width = 4096
+    sheet_height = 4096
+    spritesheet = Image.new('RGBA', (sheet_width, sheet_height))
+    x_offset = 0
+    y_offset = 0
+    max_height_in_row = 0
+
+    for sprite, name in sprites:
+        sprite = sprite.resize((96, 96), Image.NEAREST)
+
+        sprite_width, sprite_height = sprite.size
+
+        if x_offset + sprite_width > sheet_width:
+            x_offset = 0
+            y_offset += max_height_in_row
+            max_height_in_row = 0
+
+        if y_offset + sprite_height > sheet_height:
+            print("error: spritesheet too small")
+            break  # No more space on the spritesheet
+
+        spritesheet.paste(sprite, (x_offset, y_offset))
+        css += f".sprite-{name} {{ background: url('spritesheet.png') -{x_offset}px -{y_offset}px; width: {sprite_width}px; height: {sprite_height}px; }}\n"
+        x_offset += sprite_width
+        max_height_in_row = max(max_height_in_row, sprite_height)
+
+    spritesheet.save('static/spritesheet.png')
+
+    # write css to file
+    with open('static/spritesheet.css', 'w') as f:
+        f.write(css)
+    
+
 
 
 # encounters_data = load_encounters()
@@ -103,3 +174,4 @@ def load_encounters():
 #     json.dump(encounters_data, jsonfile, ensure_ascii=False, indent=4)
 
 check_and_copy_sprites()
+make_spritesheet()

@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pokemon Grid</title>
+    <title>Pokedex Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='spritesheet.css') }}">
     <style>
         body {
             display: flex;
@@ -113,8 +114,8 @@
             flex-direction: column;
             align-items: center;
             padding: 0;
-            width: 110px;
-            height: 110px;
+            width: 130px;
+            height: 130px;
             cursor: pointer;
             transition: background-color 0.3s;
             border: 2px solid transparent;
@@ -133,10 +134,10 @@
             background-color: #6ddd87;
         }
 
-        .grid-item img {
-            width: 64px;
-            height: 64px;
-            object-fit: cover;
+        .grid-item .sprite {
+            display: inline-block;
+            width: 96;
+            height: 96px;
         }
 
         .grid-item p {
@@ -327,7 +328,8 @@
             {% for pokemon in pokemons %}
                 <div class="grid-item {% if pokemon.caught | lower == 'true' %}caught{% elif pokemon.method | lower == 'true' %}has-method{% endif %}" onclick="toggleCaught(event)">
                     <p class="identifier">{{ pokemon.identifier | capitalize }}</p>
-                    <img src="{{ pokemon.image_url }}" alt="{{ pokemon.identifier }}" loading="lazy">
+                    <!-- <img src="{{ pokemon.image_url }}" alt="{{ pokemon.identifier }}" loading="lazy"> -->
+                    <div class="sprite {{ pokemon.sprite_id }}" ></div>
                     <p class="id">#{{ pokemon.id }}</p>
                     <span class="info-icon" onclick="event.stopPropagation(); showPokemonInfo('{{ pokemon.identifier }}', event)">ℹ️</span>
                 </div>
