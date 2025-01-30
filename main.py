@@ -71,6 +71,10 @@ def home():
                 else:
                     row['caught'] = False
 
+                # Get if still processing
+                if(row['identifier'] in save_data and 'processing' in save_data[row['identifier']]):
+                    row['processing'] = save_data[row['identifier']]['processing']
+
                 # Get if method
                 if(row['identifier'] in save_data and 'huntMethod' in save_data[row['identifier']]):
                     row['method'] = True

@@ -91,7 +91,10 @@
             box-sizing: border-box;
         }
 
-        .generations .selector:hover, .methods .selector:hover, .generations .selected, .methods .selected {
+        .generations .selector:hover,
+        .methods .selector:hover,
+        .generations .selected,
+        .methods .selected {
             background-color: #6ddd87;
         }
 
@@ -119,7 +122,7 @@
             cursor: pointer;
             transition: background-color 0.3s;
             border: 2px solid transparent;
-            position: relative; /* For positioning the info icon */
+            position: relative; /* For positioning the icons */
         }
 
         .grid-item:hover {
@@ -134,9 +137,14 @@
             background-color: #6ddd87;
         }
 
+        /* New processing class style (example) */
+        .grid-item.processing {
+            background-color: #ffa500;
+        }
+
         .grid-item .sprite {
             display: inline-block;
-            width: 96;
+            width: 96px;
             height: 96px;
         }
 
@@ -158,6 +166,7 @@
             color: #777;
         }
 
+        /* Info icon styling (bottom-right) */
         .info-icon {
             position: absolute;
             bottom: 5px;
@@ -169,14 +178,28 @@
         }
 
         .grid-item:hover .info-icon {
-            display: block; /* Show icon on hover */
+            display: block;
         }
 
+        /* Processing icon styling (bottom-left) */
+        .process-icon {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            font-size: 1.2em;
+            color: #007bff;
+            cursor: pointer;
+            display: none;
+            border-radius: 3px;
+        }
+
+        .grid-item:hover .process-icon {
+            display: block;
+        }
 
         .pokemon-info.active {
             display: block;
         }
-
     </style>
     <script>
         let currentPokemon = null;
@@ -207,12 +230,36 @@
 
         function toggleCaught(event) {
             const item = event.currentTarget;
+
+            // If the item is processing, remove the processing class
+            var processing = item.classList.contains('processing');
+            if (processing) {
+                item.classList.remove('processing');
+                processing = false;
+            }
+
             item.classList.toggle('caught');
             const identifier = item.querySelector('.identifier').textContent.trim().toLowerCase();
             const caught = item.classList.contains('caught');
 
+            savePokemonData({ identifier: identifier, caught: caught, processing: processing });
+        }
 
-            savePokemonData({ identifier: identifier, caught: caught });
+        // New function to toggle both 'caught' and 'processing' classes
+        function toggleProcessing(event) {
+            event.stopPropagation(); // prevent the caught toggle    
+            const item = event.currentTarget.parentElement;
+            // If already caught, do nothing
+            if (item.classList.contains('caught')) {
+                return;
+            }
+            const identifier = item.querySelector('.identifier').textContent.trim().toLowerCase();
+            item.classList.toggle('processing');
+            
+            savePokemonData({
+                identifier: identifier,
+                processing: item.classList.contains('processing')
+            });
         }
 
         function showPokemonInfo(pokemon, event) {
@@ -232,8 +279,8 @@
             fetch(`/huntMethods/${pokemon}`)
                 .then(response => response.json())
                 .then(data => {
-                    firstButton = null;
-                    secondButton = null;
+                    let firstButton = null;
+                    let secondButton = null;
                     Object.keys(data).forEach(gen => {
                         const button = document.createElement('div');
                         if(gen == '0') button.textContent = "Go";
@@ -275,23 +322,23 @@
                                 };
                                 methods.appendChild(methodItem);
                             });
-                        
                         };
                         if (!firstButton) {
                             firstButton = button;
-                        }
-                        else if (!secondButton) {
+                        } else if (!secondButton) {
                             secondButton = button;
                         }
                         generations.appendChild(button);
                     });
-                    if(!currentMethod) secondButton.click(); // Ignore the first button which is always pokemon go
+                    // Click the second button by default (ignore the "Go" generation)
+                    if(!currentMethod && secondButton) {
+                        secondButton.click();
+                    }
                 })
                 .catch(error => {
                     console.error('Error:', error);
                 });
-            
-            
+
             // Display data if it already exists
             fetch(`/getPokemonData/${pokemon}`)
                 .then(response => response.json())
@@ -314,7 +361,6 @@
                 });
 
             sidebar.querySelector('.pokemon-info .name').textContent = pokemon.charAt(0).toUpperCase() + pokemon.slice(1);
-            //sidebar.querySelector('.pokemon-info .details').textContent = `Some detailed info about ${pokemon}...`;  // You can add more info here
             sidebar.querySelector('.pokemon-info').classList.add('active');
         }
     </script>
@@ -326,12 +372,17 @@
         <div class="grid-container">
             <h2 style="grid-column: 1 / -1;">{{ start_id }} - {{ start_id + 29 }}</h2>
             {% for pokemon in pokemons %}
-                <div class="grid-item {% if pokemon.caught | lower == 'true' %}caught{% elif pokemon.method | lower == 'true' %}has-method{% endif %}" onclick="toggleCaught(event)">
+                <div class="grid-item {% if pokemon.caught | lower == 'true' %}caught{% elif pokemon.method | lower == 'true' %}has-method{% endif %} {% if pokemon.processing | lower == 'true' %}processing{% endif %}"
+                    onclick="toggleCaught(event)">
                     <p class="identifier">{{ pokemon.identifier | capitalize }}</p>
-                    <!-- <img src="{{ pokemon.image_url }}" alt="{{ pokemon.identifier }}" loading="lazy"> -->
-                    <div class="sprite {{ pokemon.sprite_id }}" ></div>
+                    <div class="sprite {{ pokemon.sprite_id }}"></div>
                     <p class="id">#{{ pokemon.id }}</p>
+
+                    <!-- Info icon (bottom-right) -->
                     <span class="info-icon" onclick="event.stopPropagation(); showPokemonInfo('{{ pokemon.identifier }}', event)">ℹ️</span>
+
+                    <!-- Processing icon (bottom-left) -->
+                    <span class="process-icon" onclick="toggleProcessing(event)">📋</span>
                 </div>
                 {% if loop.index % 30 == 0 %}
                     {% set start_id = pokemon.id | int + 1 %}
