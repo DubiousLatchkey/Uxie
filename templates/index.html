@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pokedex Tracker</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='spritesheet.css') }}">
+
     <style>
         body {
             display: flex;
@@ -24,7 +25,8 @@
 
         /* Sidebar Styling */
         .sidebar {
-            display: flex;
+            /* Initially hide the sidebar */
+            display: none; 
             flex-direction: column;
             width: 30%;
             position: sticky;
@@ -48,6 +50,10 @@
             display: flex;
             flex-direction: column;
             width: 85%;
+        }
+
+        .pokemon-info.active {
+            display: block;
         }
 
         .generations {
@@ -137,7 +143,6 @@
             background-color: #6ddd87;
         }
 
-        /* New processing class style (example) */
         .grid-item.processing {
             background-color: #ffa500;
         }
@@ -197,10 +202,72 @@
             display: block;
         }
 
-        .pokemon-info.active {
-            display: block;
+        /* Attempts styling */
+        .attempts {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .attempts label {
+            font-weight: bold;
+            color: #555;
+        }
+
+        .attempts input {
+            width: 60px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .buttons {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .buttons button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .buttons button:hover {
+            background-color: #0056b3;
+        }
+
+        .sidebar-header {
+            position: relative;       /* Allows absolute positioning of the button */
+            padding: 10px 20px;
+            text-align: center;       /* Centers the h2 horizontally */
+        }
+
+        /* Ensure the heading has no extra margin 
+        so it truly appears centered in the header */
+        .sidebar-header .name {
+            margin: 0;               
+        }
+
+        /* The close button is absolutely positioned to the right */
+        .close-btn {
+            position: absolute;
+            top: 50%;
+            right: 0px;
+            transform: translateY(-50%);
+            cursor: pointer;
         }
     </style>
+
     <script>
         let currentPokemon = null;
         let currentGeneration = null;
@@ -228,6 +295,10 @@
             });
         }
 
+        function hideSidebar() {
+            document.querySelector('.sidebar').style.display = 'none';
+        }
+
         function toggleCaught(event) {
             const item = event.currentTarget;
 
@@ -245,9 +316,9 @@
             savePokemonData({ identifier: identifier, caught: caught, processing: processing });
         }
 
-        // New function to toggle both 'caught' and 'processing' classes
+        // Toggle 'processing' state (📋 icon)
         function toggleProcessing(event) {
-            event.stopPropagation(); // prevent the caught toggle    
+            event.stopPropagation(); // prevent the caught toggle
             const item = event.currentTarget.parentElement;
             // If already caught, do nothing
             if (item.classList.contains('caught')) {
@@ -262,6 +333,21 @@
             });
         }
 
+        function saveAttempts(event) {
+            const attempts = document.getElementById('attempts-input').value;
+            if (currentPokemon) {
+                savePokemonData({ identifier: currentPokemon, attempts: attempts });
+            }
+        }
+
+        function clearAttempts(event) {
+            document.getElementById('attempts-input').value = 0;
+            if (currentPokemon) {
+                savePokemonData({ identifier: currentPokemon, attempts: 0 });
+            }
+        }
+
+        // Show the sidebar and load data
         function showPokemonInfo(pokemon, event) {
             currentPokemon = pokemon;
             currentMethod = null;
@@ -272,6 +358,9 @@
             const generations = sidebar.querySelector('.pokemon-info .generations');
             const methods = sidebar.querySelector('.pokemon-info .methods');
 
+            // Make sure the sidebar is visible
+            sidebar.style.display = 'flex';
+
             details.innerHTML = '';
             generations.innerHTML = '';
             methods.innerHTML = '';
@@ -281,6 +370,7 @@
                 .then(data => {
                     let firstButton = null;
                     let secondButton = null;
+
                     Object.keys(data).forEach(gen => {
                         const button = document.createElement('div');
                         if(gen == '0') button.textContent = "Go";
@@ -293,6 +383,7 @@
                             button.classList.add('selected');
                             currentGeneration = gen;
 
+                            // Ensure "Event/Guarantee" and "Randomly Found" are in the list
                             if (!data[gen].includes('Event/Guarantee')) {
                                 data[gen].unshift('Event/Guarantee');
                             }
@@ -323,6 +414,7 @@
                                 methods.appendChild(methodItem);
                             });
                         };
+
                         if (!firstButton) {
                             firstButton = button;
                         } else if (!secondButton) {
@@ -330,6 +422,7 @@
                         }
                         generations.appendChild(button);
                     });
+
                     // Click the second button by default (ignore the "Go" generation)
                     if(!currentMethod && secondButton) {
                         secondButton.click();
@@ -353,6 +446,8 @@
                             if (methodButton) {
                                 methodButton.classList.add('selected');
                             }
+                            // Set attempts input value
+                            document.getElementById('attempts-input').value = data.attempts || 0;
                         }
                     }
                 })
@@ -360,7 +455,9 @@
                     console.error('Error:', error);
                 });
 
-            sidebar.querySelector('.pokemon-info .name').textContent = pokemon.charAt(0).toUpperCase() + pokemon.slice(1);
+            // Update the Pokémon name in the sidebar
+            sidebar.querySelector('.pokemon-info .name').textContent =
+                pokemon.charAt(0).toUpperCase() + pokemon.slice(1);
             sidebar.querySelector('.pokemon-info').classList.add('active');
         }
     </script>
@@ -393,13 +490,28 @@
         </div>
     </div>
 
-    <!-- Sidebar -->
+    <!-- Sidebar (hidden by default) -->
     <div class="sidebar">
+        <!-- Close button -->
         <div class="pokemon-info">
-            <h2 class="name">Pokemon Information</h2>
+            <div class="sidebar-header">
+                <h2 class="name">Pokemon Information</h2>
+                <button class="close-btn" onclick="hideSidebar()">✖</button>
+            </div>
             <div class="generations"></div>
             <div class="methods"></div>
             <p class="details"></p>
+            
+            <!-- Attempts Section -->
+            <div class="attempts">
+                <label for="attempts-input">Attempts:</label>
+                <input type="number" id="attempts-input" min="0" value="0">
+            </div>
+
+            <div class="buttons">
+                <button onclick="saveAttempts(event)">Save</button>
+                <button onclick="clearAttempts(event)">Clear</button>
+            </div>
         </div>
     </div>
 </body>

@@ -104,7 +104,7 @@ def save_pokemon_data():
     with open('save.json', 'w') as f:
         json.dump(save_data, f)
     
-    return redirect(url_for('home'))
+    return jsonify({"message": "Data saved"})
 
 # Fetches saved data about pokemon
 @app.route('/getPokemonData/<identifier>', methods=['GET'])
@@ -128,6 +128,11 @@ def get_encounter_info(pokemon_name):
         return jsonify(shiny_methods)
     else:
         return jsonify({"error": "Pokemon not found"}), 404
+    
+# Download save file
+@app.route('/downloadSave')
+def download_save():
+    return jsonify(save_data)
 
 if __name__ == '__main__':
     app.run(debug=True)
