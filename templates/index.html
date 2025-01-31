@@ -353,14 +353,21 @@
             });
         });
 
-        function updateProgress(name, value, color) {
+        function updateProgress(name, value, color, generation, method) {
+            const currentBarValue = getProgress("overall", name);
+            const colorToSet = name == "Caught" ? "#6ddd87" : name == "Processing" ? "#ffa500" : "#ff5757";
+            var modifier = 0;
+            if(value > currentBarValue) modifier = 1;
+            else if(value < currentBarValue) modifier = -1;
+
             setProgress("overall", [{ name, value, color }], parseInt("{{ stats.total_pokemon }}"));
+            
             document.querySelectorAll('.progress-bar').forEach(bar => {
-                if(bar.getAttribute('data-progress') != "overall"){
-                    const attribute = bar.getAttribute('data-progress');
-                    let method_data = 
+                const attribute = bar.getAttribute('data-progress');
+                const generationAttribute = bar.getAttribute('catchGeneration');
+                if(attribute != "overall" && attribute == method && generationAttribute == generation){
                     setProgress(attribute, [
-                        { name: name, value: value, color: "#6ddd87" },
+                        { name: name, value: parseInt(bar.getAttribute(name)) + modifier, color: colorToSet },
                     ], parseInt(bar.getAttribute('total')));
                 }
                 
@@ -417,8 +424,8 @@
 
             savePokemonData({ identifier: identifier, caught: caught, processing: processing });
             showPokemonInfo(identifier, event);
-            updateProgress("Caught", getProgress("overall", "Caught") + modifier, "#6ddd87");
-            updateProgress("Processing", processingTotal, "#ffa500");
+            updateProgress("Caught", getProgress("overall", "Caught") + modifier, "#6ddd87", item.getAttribute('catchGeneration'), item.getAttribute('huntMethod'));
+            updateProgress("Processing", processingTotal, "#ffa500", item.getAttribute('catchGeneration'), item.getAttribute('huntMethod'));
         }
 
         // Toggle 'processing' state (📋 icon)
@@ -437,7 +444,7 @@
                 identifier: identifier,
                 processing: item.classList.contains('processing')
             });
-            updateProgress("Processing", getProgress("overall", "Processing") + modifier, "#ffa500");
+            updateProgress("Processing", getProgress("overall", "Processing") + modifier, "#ffa500", item.getAttribute('catchGeneration'), item.getAttribute('huntMethod'));
         }
 
         function toggleShinyLock(event){
@@ -452,12 +459,12 @@
 
                 item.classList.remove('processing');
                 item.classList.remove('caught');
-                updateProgress("Processing", getProgress("overall", "Processing") + processingModifier, "#ffa500");
-                updateProgress("Caught", getProgress("overall", "Caught") + caughtModifier, "#6ddd87");
-                updateProgress("Shiny Locked", getProgress("overall", "Shiny Locked") + 1, "#ff5757");
+                updateProgress("Processing", getProgress("overall", "Processing") + processingModifier, "#ffa500", item.getAttribute('catchGeneration'), item.getAttribute('huntMethod'));
+                updateProgress("Caught", getProgress("overall", "Caught") + caughtModifier, "#6ddd87", item.getAttribute('catchGeneration'), item.getAttribute('huntMethod'));
+                updateProgress("Shiny Locked", getProgress("overall", "Shiny Locked") + 1, "#ff5757", item.getAttribute('catchGeneration'), item.getAttribute('huntMethod'));
             }
             else{
-                updateProgress("Shiny Locked", getProgress("overall", "Shiny Locked") - 1, "#ff5757");
+                updateProgress("Shiny Locked", getProgress("overall", "Shiny Locked") - 1, "#ff5757", item.getAttribute('catchGeneration'), item.getAttribute('huntMethod'));
             }
 
             savePokemonData({
@@ -545,6 +552,29 @@
                                     if (!gridItem.classList.contains('caught')) {
                                         gridItem.classList.add('has-method');
                                     }
+                                    // Update the progress bars
+                                    currentCatchGeneration = gridItem.getAttribute('catchGeneration');
+                                    currentHuntMethod = gridItem.getAttribute('huntMethod');
+                                    document.querySelectorAll('.progress-bar').forEach(bar => {
+                                        const attribute = bar.getAttribute('data-progress');
+                                        const generationAttribute = bar.getAttribute('catchGeneration');
+                                        if (attribute == currentHuntMethod && generationAttribute == currentCatchGeneration) {
+                                            const newTotal = parseInt(bar.getAttribute('total')) - 1;
+                                            bar.setAttribute('total', newTotal);
+                                            setProgress(attribute, [
+                                                { name: "Caught", value: parseInt(bar.getAttribute("caught")), color: "#6ddd87" },,
+                                            ], newTotal);
+                                        }
+                                        else if (attribute == method && generationAttribute == gen) {
+                                            const newTotal = parseInt(bar.getAttribute('total')) + 1;
+                                            bar.setAttribute('total', newTotal);
+                                            setProgress(attribute, [
+                                                { name: "Caught", value: parseInt(bar.getAttribute("caught")), color: "#6ddd87" },
+                                            ], newTotal);
+                                        }
+                                    });
+                                    gridItem.setAttribute('catchGeneration', gen);
+                                    gridItem.setAttribute('huntMethod', method);
                                 };
                                 methods.appendChild(methodItem);
                             });
@@ -618,7 +648,8 @@
                 <h2>{{ method }} Progress</h2>
                 <div class="progress-container">
                     <div class="progress-bar" data-progress="{{ method }}" 
-                    caught="{{ method_stats.caught }}" processing="{{ method_stats.processing }}" total="{{ method_stats.total }}"></div>
+                    caught="{{ method_stats.caught }}" processing="{{ method_stats.processing }}" 
+                    total="{{ method_stats.total }}" catchGeneration="{{ method_stats.catchGeneration }}"></div>
                     <div class="progress-total-badge" id="progressTotal-{{ method }}"></div>
                 </div>
                 <div class="progress-legend" id="progressLegend-{{ method }}"></div>
@@ -631,6 +662,7 @@
             <h2 style="grid-column: 1 / -1;">{{ start_id }} - {{ start_id + 29 }}</h2>
             {% for pokemon in pokemons %}
                 <div class="grid-item {% if pokemon.caught | lower == 'true' %}caught{% endif %} {% if pokemon.method | lower == 'true' %}has-method{% endif %} {% if pokemon.processing | lower == 'true' %}processing{% endif %} {% if pokemon.shinyLocked | lower == 'true' %}shiny-locked{% endif %}"
+                    huntMethod="{{ pokemon.huntMethod }}" catchGeneration="{{ pokemon.catchGeneration }}"
                     onclick="toggleCaught(event)">
                     <p class="identifier">{{ pokemon.identifier | capitalize }}</p>
                     <div class="sprite {{ pokemon.sprite_id }}"></div>

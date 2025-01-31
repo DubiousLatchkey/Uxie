@@ -95,8 +95,10 @@ def home():
                     
 
                     # Get if method and calc method stats
-                    hunt_method = save_data[row['identifier']].get('huntMethod', None)
-                    row['method'] = True if hunt_method else False
+                    hunt_method = save_data[row['identifier']].get('huntMethod', "")
+                    row['method'] = True if not hunt_method == "" else False
+                    row['huntMethod'] = hunt_method
+                    row['catchGeneration'] = save_data[row['identifier']].get('catchGeneration', 0)
                     if(hunt_method and not shinyLocked and hunt_method not in ignore_methods):
                         if hunt_method not in method_stats:
                             method_stats[hunt_method] = {
@@ -132,6 +134,10 @@ def home():
             else:
                 avg_attempts = 0
             
+            for gen, methods in generationShinyEncounterMethods.items():
+                if method in methods:
+                    stats['catchGeneration'] = gen
+                    break
             stats['average_attempts'] = avg_attempts
             stats.pop('sum_attempts')
 
