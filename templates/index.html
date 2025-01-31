@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pokedex Tracker</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='spritesheet.css') }}">
-
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/progressbar.css') }}">
+    <script src="{{ url_for('static', filename='scripts/progressbar.js') }}"></script>
     <style>
         body {
             display: flex;
@@ -14,6 +15,11 @@
             background-color: #f8f9fa;
             margin: 0;
             padding: 20px;
+        }
+
+        .tracker {
+            align-items: center;
+            justify-content: center;
         }
 
         h1 {
@@ -136,7 +142,7 @@
         }
 
         .grid-item.has-method {
-            background-color: #cfcfcf;
+            background-color: #e0e0e0;
         }
 
         .grid-item.caught {
@@ -145,6 +151,10 @@
 
         .grid-item.processing {
             background-color: #ffa500;
+        }
+
+        .grid-item.shiny-locked {
+            background-color: #ff5757;
         }
 
         .grid-item .sprite {
@@ -196,6 +206,23 @@
             cursor: pointer;
             display: none;
             border-radius: 3px;
+        }
+        /* Shiny lock icon styling (top-right) */
+        .shiny-locked-icon {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 1.2em;
+            cursor: pointer;
+            display: none;
+        }
+
+        .grid-item:hover .shiny-locked-icon {
+            display: block;
+        }
+
+        .grid-item.shiny-locked .shiny-locked-icon {
+            display: block;
         }
 
         .grid-item:hover .process-icon {
@@ -273,6 +300,15 @@
         let currentGeneration = null;
         let currentMethod = null;
 
+        document.addEventListener("DOMContentLoaded", function () {
+            setProgress("overall", [
+                { name: "Caught", value: parseInt("{{ stats.total_caught }}"), color: "#6ddd87" },
+                { name: "Processing", value: parseInt("{{ stats.total_processing }}"), color: "#ffa500" },
+                { name: "Shiny Locked", value: parseInt("{{ stats.total_shiny_locked }}"), color: "#ff5757" },
+            ], parseInt("{{ stats.total_pokemon }}"));
+        });
+        
+
         function savePokemonData(data) {
             if (!data.identifier) {
                 console.error('Identifier is required');
@@ -314,6 +350,7 @@
             const caught = item.classList.contains('caught');
 
             savePokemonData({ identifier: identifier, caught: caught, processing: processing });
+            showPokemonInfo(identifier, event);
         }
 
         // Toggle 'processing' state (📋 icon)
@@ -330,6 +367,25 @@
             savePokemonData({
                 identifier: identifier,
                 processing: item.classList.contains('processing')
+            });
+        }
+
+        function toggleShinyLock(event){
+            event.stopPropagation(); // prevent the caught toggle
+            const item = event.currentTarget.parentElement;
+            const identifier = item.querySelector('.identifier').textContent.trim().toLowerCase();
+            item.classList.toggle('shiny-locked');
+
+            if (item.classList.contains('shiny-locked')) {
+                item.classList.remove('processing');
+                item.classList.remove('caught');
+            }
+
+            savePokemonData({
+                identifier: identifier,
+                shinyLocked: item.classList.contains('shiny-locked'),
+                caught: false,
+                processing: false
             });
         }
 
@@ -463,13 +519,19 @@
     </script>
 </head>
 <body>
-    <div>
+    <div class="tracker">
         <h1>Pokedex Tracker</h1>
+        <div class="progress-wrapper">
+            <div class="progress-container">
+                <div class="progress-bar" data-progress="overall"></div>
+            </div>
+            <div class="progress-legend" id="progressLegend-overall"></div>
+        </div>
         {% set start_id = 1 %}
         <div class="grid-container">
             <h2 style="grid-column: 1 / -1;">{{ start_id }} - {{ start_id + 29 }}</h2>
             {% for pokemon in pokemons %}
-                <div class="grid-item {% if pokemon.caught | lower == 'true' %}caught{% elif pokemon.method | lower == 'true' %}has-method{% endif %} {% if pokemon.processing | lower == 'true' %}processing{% endif %}"
+                <div class="grid-item {% if pokemon.caught | lower == 'true' %}caught{% endif %} {% if pokemon.method | lower == 'true' %}has-method{% endif %} {% if pokemon.processing | lower == 'true' %}processing{% endif %} {% if pokemon.shinyLocked | lower == 'true' %}shiny-locked{% endif %}"
                     onclick="toggleCaught(event)">
                     <p class="identifier">{{ pokemon.identifier | capitalize }}</p>
                     <div class="sprite {{ pokemon.sprite_id }}"></div>
@@ -480,7 +542,10 @@
 
                     <!-- Processing icon (bottom-left) -->
                     <span class="process-icon" onclick="toggleProcessing(event)">📋</span>
-                </div>
+                    
+                    <!-- Shiny locked icon (top-right) -->
+                    <span class="shiny-locked-icon" onclick="toggleShinyLock(event)">🔒</span>
+            </div>
                 {% if loop.index % 30 == 0 %}
                     {% set start_id = pokemon.id | int + 1 %}
                     </div><div class="grid-container">

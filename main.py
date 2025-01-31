@@ -19,6 +19,8 @@ generationShinyEncounterMethods = {
     0: ["Community Day"] # Pokemon Go
 }
 
+ignore_methods = {"Community Day", "Prev Gen Evo"}
+
 def load_or_create_save():
     save_file = 'save.json'
     if os.path.exists(save_file):
@@ -58,32 +60,98 @@ pokemons = load_pokemon()
 @app.route('/')
 def home():
     pokemon_list = []
+    total_shiny_locked = 0
+    total_caught = 0
+    total_processing = 0
+    total_pokemon = 0
+    method_stats = {}
     with open('pokeapi/data/v2/csv/pokemon_species.csv', newline='') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             if int(row['id']) < 10000:
                 #row['image_url'] = f"static/sprites/{row['id']}.png"
                 row['sprite_id'] = "sprite-" + row['id']
+                total_pokemon += 1
 
-                # Get if caught
-                if(row['identifier'] in save_data and 'caught' in save_data[row['identifier']]):
-                    row['caught'] = save_data[row['identifier']]['caught']
+                if(row['identifier'] in save_data):
+
+                    # Get if caught
+                    caught = save_data[row['identifier']].get('caught', False)
+                    row['caught'] = caught
+                    if(caught):
+                        total_caught += 1
+
+                    # Get if still processing
+                    processing = save_data[row['identifier']].get('processing', False)
+                    row['processing'] = processing
+                    if(processing):
+                        total_processing += 1
+
+                    # Get if shiny locked
+                    shinyLocked = save_data[row['identifier']].get('shinyLocked', False)
+                    row['shinyLocked'] = shinyLocked
+                    if(shinyLocked):
+                        total_shiny_locked += 1
+                    
+
+                    # Get if method and calc method stats
+                    hunt_method = save_data[row['identifier']].get('huntMethod', None)
+                    row['method'] = True if hunt_method else False
+                    if(hunt_method and not shinyLocked and hunt_method not in ignore_methods):
+                        if hunt_method not in method_stats:
+                            method_stats[hunt_method] = {
+                                'caught': 0,
+                                'processing': 0,
+                                'total': 0,
+                                'sum_attempts': 0,
+                                'count_attempts': 0
+                            }
+                        
+                        method_stats[hunt_method]['total'] += 1
+                        if caught:
+                            method_stats[hunt_method]['caught'] += 1
+                        elif processing:
+                            method_stats[hunt_method]['processing'] += 1
+                        
+                        attempts = int(save_data[row['identifier']].get('attempts', 0))
+                        if attempts > 0:
+                            method_stats[hunt_method]['sum_attempts'] += attempts
+                            method_stats[hunt_method]['count_attempts'] += 1
+
                 else:
                     row['caught'] = False
-
-                # Get if still processing
-                if(row['identifier'] in save_data and 'processing' in save_data[row['identifier']]):
-                    row['processing'] = save_data[row['identifier']]['processing']
-
-                # Get if method
-                if(row['identifier'] in save_data and 'huntMethod' in save_data[row['identifier']]):
-                    row['method'] = True
-                else:
+                    row['processing'] = False
+                    row['shinyLocked'] = False
                     row['method'] = False
 
                 pokemon_list.append(row)
 
-        return render_template('index.html', pokemons=pokemon_list)
+        methods_progress = []
+        for method, stats in method_stats.items():
+            method_total = stats['total']
+            method_caught = stats['caught']
+            method_progress = 0
+
+            avg_attempts = None
+            if stats['count_attempts'] > 0:
+                avg_attempts = stats['sum_attempts'] / stats['count_attempts']
+            
+            methods_progress.append({
+                'method': method,
+                'total': method_total,
+                'caught': method_caught,
+                'average_attempts': avg_attempts
+            })
+
+        stats = {
+            "total_caught": total_caught,
+            "total_processing": total_processing,
+            "total_shiny_locked": total_shiny_locked,
+            "total_pokemon": total_pokemon,
+            "method_stats": methods_progress
+        }
+
+        return render_template('index.html', pokemons=pokemon_list, stats=stats)
 
 # Writes data to save.json
 @app.route('/save', methods=['POST'])
