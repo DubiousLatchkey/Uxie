@@ -55,3 +55,10 @@ function setProgress(progressName, updates, totalValue) {
 }
 
 
+function getProgress(progressName, key) {
+    if (!progressData[progressName]) {
+        return null;
+    }
+    let dataMap = new Map(progressData[progressName].map(item => [item.name, item.value]));
+    return dataMap.get(key) || null;
+}

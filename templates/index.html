@@ -338,19 +338,30 @@
         function toggleCaught(event) {
             const item = event.currentTarget;
 
+            // If the item is shiny locked, do nothing
+            if(item.classList.contains('shiny-locked')){
+                return;
+            }
             // If the item is processing, remove the processing class
             var processing = item.classList.contains('processing');
+            var processingTotal = getProgress("overall", "Processing");
             if (processing) {
                 item.classList.remove('processing');
                 processing = false;
+                processingTotal -= 1;
             }
 
             item.classList.toggle('caught');
             const identifier = item.querySelector('.identifier').textContent.trim().toLowerCase();
             const caught = item.classList.contains('caught');
+            let modifier = caught ? 1 : -1;
 
             savePokemonData({ identifier: identifier, caught: caught, processing: processing });
             showPokemonInfo(identifier, event);
+            setProgress("overall", [
+                { name: "Caught", value: getProgress("overall", "Caught") + modifier, color: "#6ddd87" },
+                { name: "Processing", value: processingTotal, color: "#ffa500" },
+            ], parseInt("{{ stats.total_pokemon }}"));
         }
 
         // Toggle 'processing' state (📋 icon)
@@ -363,11 +374,15 @@
             }
             const identifier = item.querySelector('.identifier').textContent.trim().toLowerCase();
             item.classList.toggle('processing');
+            let modifier = item.classList.contains('processing') ? 1 : -1;
             
             savePokemonData({
                 identifier: identifier,
                 processing: item.classList.contains('processing')
             });
+            setProgress("overall", [
+                { name: "Processing", value: getProgress("overall", "Processing") + modifier, color: "#ffa500" },
+            ], parseInt("{{ stats.total_pokemon }}"));
         }
 
         function toggleShinyLock(event){
@@ -377,8 +392,21 @@
             item.classList.toggle('shiny-locked');
 
             if (item.classList.contains('shiny-locked')) {
+                processingModifier = item.classList.contains('processing') ? -1 : 0;
+                caughtModifier = item.classList.contains('caught') ? -1 : 0;
+
                 item.classList.remove('processing');
                 item.classList.remove('caught');
+                setProgress("overall", [
+                    { name: "Caught", value: getProgress("overall", "Caught") + caughtModifier, color: "#6ddd87" },
+                    { name: "Processing", value: getProgress("overall", "Processing") + processingModifier, color: "#ffa500" },
+                    { name: "Shiny Locked", value: getProgress("overall", "Shiny Locked") + 1, color: "#ff5757" },
+                ], parseInt("{{ stats.total_pokemon }}"));
+            }
+            else{
+                setProgress("overall", [
+                    { name: "Shiny Locked", value: getProgress("overall", "Shiny Locked") - 1, color: "#ff5757" },
+                ], parseInt("{{ stats.total_pokemon }}"));
             }
 
             savePokemonData({
