@@ -126,29 +126,21 @@ def home():
 
                 pokemon_list.append(row)
 
-        methods_progress = []
         for method, stats in method_stats.items():
-            method_total = stats['total']
-            method_caught = stats['caught']
-            method_progress = 0
-
-            avg_attempts = None
             if stats['count_attempts'] > 0:
                 avg_attempts = stats['sum_attempts'] / stats['count_attempts']
+            else:
+                avg_attempts = 0
             
-            methods_progress.append({
-                'method': method,
-                'total': method_total,
-                'caught': method_caught,
-                'average_attempts': avg_attempts
-            })
+            stats['average_attempts'] = avg_attempts
+            stats.pop('sum_attempts')
 
         stats = {
             "total_caught": total_caught,
             "total_processing": total_processing,
             "total_shiny_locked": total_shiny_locked,
             "total_pokemon": total_pokemon,
-            "method_stats": methods_progress
+            "method_stats": method_stats
         }
 
         return render_template('index.html', pokemons=pokemon_list, stats=stats)

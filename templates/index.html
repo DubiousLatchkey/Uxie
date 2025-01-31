@@ -293,6 +293,29 @@
             transform: translateY(-50%);
             cursor: pointer;
         }
+        .collapsible {
+                background-color: #007bff;
+                color: white;
+                cursor: pointer;
+                padding: 10px;
+                width: 100%;
+                border: none;
+                text-align: center;
+                outline: none;
+                font-size: 15px;
+                border-radius: 4px;
+                margin-bottom: 10px;
+            }
+
+            .collapsible:hover {
+                background-color: #0056b3;
+            }
+
+            .content {
+                display: none;
+                flex-direction: column;
+                width: 100%;
+            }
     </style>
 
     <script>
@@ -306,7 +329,43 @@
                 { name: "Processing", value: parseInt("{{ stats.total_processing }}"), color: "#ffa500" },
                 { name: "Shiny Locked", value: parseInt("{{ stats.total_shiny_locked }}"), color: "#ff5757" },
             ], parseInt("{{ stats.total_pokemon }}"));
+            document.querySelectorAll('.progress-bar').forEach(bar => {
+                if(bar.getAttribute('data-progress') != "overall"){
+                    const attribute = bar.getAttribute('data-progress');
+                    let method_data = 
+                    setProgress(attribute, [
+                        { name: "Caught", value: parseInt(bar.getAttribute("caught")), color: "#6ddd87" },
+                        { name: "Processing", value: parseInt(bar.getAttribute("processing")), color: "#ffa500" },
+                    ], parseInt(bar.getAttribute('total')));
+                }
+                
+            });
+            const collapsible = document.querySelector(".collapsible");
+            const content = document.querySelector(".content");
+
+            collapsible.addEventListener("click", function () {
+                this.classList.toggle("active");
+                if (content.style.display === "flex") {
+                    content.style.display = "none";
+                } else {
+                    content.style.display = "flex";
+                }
+            });
         });
+
+        function updateProgress(name, value, color) {
+            setProgress("overall", [{ name, value, color }], parseInt("{{ stats.total_pokemon }}"));
+            document.querySelectorAll('.progress-bar').forEach(bar => {
+                if(bar.getAttribute('data-progress') != "overall"){
+                    const attribute = bar.getAttribute('data-progress');
+                    let method_data = 
+                    setProgress(attribute, [
+                        { name: name, value: value, color: "#6ddd87" },
+                    ], parseInt(bar.getAttribute('total')));
+                }
+                
+            });
+         }
         
 
         function savePokemonData(data) {
@@ -358,10 +417,8 @@
 
             savePokemonData({ identifier: identifier, caught: caught, processing: processing });
             showPokemonInfo(identifier, event);
-            setProgress("overall", [
-                { name: "Caught", value: getProgress("overall", "Caught") + modifier, color: "#6ddd87" },
-                { name: "Processing", value: processingTotal, color: "#ffa500" },
-            ], parseInt("{{ stats.total_pokemon }}"));
+            updateProgress("Caught", getProgress("overall", "Caught") + modifier, "#6ddd87");
+            updateProgress("Processing", processingTotal, "#ffa500");
         }
 
         // Toggle 'processing' state (📋 icon)
@@ -380,9 +437,7 @@
                 identifier: identifier,
                 processing: item.classList.contains('processing')
             });
-            setProgress("overall", [
-                { name: "Processing", value: getProgress("overall", "Processing") + modifier, color: "#ffa500" },
-            ], parseInt("{{ stats.total_pokemon }}"));
+            updateProgress("Processing", getProgress("overall", "Processing") + modifier, "#ffa500");
         }
 
         function toggleShinyLock(event){
@@ -397,16 +452,12 @@
 
                 item.classList.remove('processing');
                 item.classList.remove('caught');
-                setProgress("overall", [
-                    { name: "Caught", value: getProgress("overall", "Caught") + caughtModifier, color: "#6ddd87" },
-                    { name: "Processing", value: getProgress("overall", "Processing") + processingModifier, color: "#ffa500" },
-                    { name: "Shiny Locked", value: getProgress("overall", "Shiny Locked") + 1, color: "#ff5757" },
-                ], parseInt("{{ stats.total_pokemon }}"));
+                updateProgress("Processing", getProgress("overall", "Processing") + processingModifier, "#ffa500");
+                updateProgress("Caught", getProgress("overall", "Caught") + caughtModifier, "#6ddd87");
+                updateProgress("Shiny Locked", getProgress("overall", "Shiny Locked") + 1, "#ff5757");
             }
             else{
-                setProgress("overall", [
-                    { name: "Shiny Locked", value: getProgress("overall", "Shiny Locked") - 1, color: "#ff5757" },
-                ], parseInt("{{ stats.total_pokemon }}"));
+                updateProgress("Shiny Locked", getProgress("overall", "Shiny Locked") - 1, "#ff5757");
             }
 
             savePokemonData({
@@ -550,11 +601,31 @@
     <div class="tracker">
         <h1>Pokedex Tracker</h1>
         <div class="progress-wrapper">
+            <h2>Overall Progress</h2>
             <div class="progress-container">
-                <div class="progress-bar" data-progress="overall"></div>
+                <div class="progress-bar" data-progress="overall"
+                caught="{{ stats.total_caught }}" processing="{{ stats.total_processing }}" 
+                total="{{ stats.total_pokemon }}" shinyLocked="{{ stats.total_shiny_locked}}"></div>
+                <div class="progress-total-badge" id="progressTotal-overall"></div>
             </div>
             <div class="progress-legend" id="progressLegend-overall"></div>
         </div>
+
+        <button class="collapsible">Show/Hide Method Progress</button>
+        <div class="content">
+            {% for method, method_stats in stats.method_stats.items() %}
+            <div class="progress-wrapper">
+                <h2>{{ method }} Progress</h2>
+                <div class="progress-container">
+                    <div class="progress-bar" data-progress="{{ method }}" 
+                    caught="{{ method_stats.caught }}" processing="{{ method_stats.processing }}" total="{{ method_stats.total }}"></div>
+                    <div class="progress-total-badge" id="progressTotal-{{ method }}"></div>
+                </div>
+                <div class="progress-legend" id="progressLegend-{{ method }}"></div>
+            </div>
+            {% endfor %}
+        </div>
+        
         {% set start_id = 1 %}
         <div class="grid-container">
             <h2 style="grid-column: 1 / -1;">{{ start_id }} - {{ start_id + 29 }}</h2>

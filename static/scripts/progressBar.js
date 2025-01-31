@@ -1,20 +1,11 @@
 let progressData = {};
         
-function setProgress(progressName, updates, totalValue) {
-    if (!progressData[progressName]) {
-        progressData[progressName] = [];
-    }
-    let dataMap = new Map(progressData[progressName].map(item => [item.name, item]));
-    
-    updates.forEach(update => {
-        dataMap.set(update.name, update);
-    });
-    
-    let updatedData = Array.from(dataMap.values());
-    progressData[progressName] = updatedData;
-    
+document.addEventListener('progressUpdated', (event) => {
+    const { progressName, updatedData, totalValue } = event.detail;
     const progressBar = document.querySelector(`.progress-bar[data-progress='${progressName}']`);
     const progressLegend = document.getElementById(`progressLegend-${progressName}`);
+    const progressTotal = document.getElementById(`progressTotal-${progressName}`);
+
     progressBar.innerHTML = "";
     progressLegend.innerHTML = "";
     
@@ -43,7 +34,15 @@ function setProgress(progressName, updates, totalValue) {
         legendItem.appendChild(legendSwatch);
         legendItem.appendChild(legendText);
         progressLegend.appendChild(legendItem);
+
+        if(section.name != "Shiny Locked"){
+            progressBar.setAttribute(section.name, section.value);
+        }
+
     });
+
+    progressTotal.textContent = `${totalUsed} / ${totalValue}`;
+    progressBar.setAttribute("total", totalValue);
     
     if (totalPercentage < 100) {
         let grayDiv = document.createElement("div");
@@ -52,6 +51,22 @@ function setProgress(progressName, updates, totalValue) {
         grayDiv.style.backgroundColor = "#bbb";
         progressBar.appendChild(grayDiv);
     }
+});
+
+function setProgress(progressName, updates, totalValue) {
+    if (!progressData[progressName]) {
+        progressData[progressName] = [];
+    }
+    let dataMap = new Map(progressData[progressName].map(item => [item.name, item]));
+    
+    updates.forEach(update => {
+        dataMap.set(update.name, update);
+    });
+    
+    let updatedData = Array.from(dataMap.values());
+    progressData[progressName] = updatedData;
+    
+    document.dispatchEvent(new CustomEvent('progressUpdated', { detail: { progressName, updatedData, totalValue } }));
 }
 
 
