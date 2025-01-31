@@ -200,5 +200,20 @@ def get_encounter_info(pokemon_name):
 def download_save():
     return jsonify(save_data)
 
+# Upload save file
+@app.route('/uploadSave', methods=['POST'])
+def upload_save():
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data found"}), 400
+    
+    with open('save.json', 'w') as f:
+        json.dump(data, f)
+
+    global save_data
+    save_data = load_or_create_save()
+
+    return jsonify({"message": "Save data uploaded"})
+
 if __name__ == '__main__':
     app.run(debug=True)
