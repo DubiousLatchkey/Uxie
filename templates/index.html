@@ -363,12 +363,20 @@
             // Create a map of last updated dates and counts
             const mapData = new Map();
             document.querySelectorAll('.grid-item').forEach(item => {
-                const lastUpdated = item.getAttribute('lastUpdated');
-                if (lastUpdated) {
-                    if (mapData.has(lastUpdated)) {
-                        mapData.set(lastUpdated, mapData.get(lastUpdated) + 1);
+                const lastUpdatedCaught = item.getAttribute('lastUpdatedCaught');
+                if (lastUpdatedCaught) {
+                    if (mapData.has(lastUpdatedCaught)) {
+                        mapData.set(lastUpdatedCaught, mapData.get(lastUpdatedCaught) + 1);
                     } else {
-                        mapData.set(lastUpdated, 1);
+                        mapData.set(lastUpdatedCaught, 1);
+                    }
+                }
+                const lastUpdatedProcessing = item.getAttribute('lastUpdatedProcessing');
+                if (lastUpdatedProcessing) {
+                    if (mapData.has(lastUpdatedProcessing)) {
+                        mapData.set(lastUpdatedProcessing, mapData.get(lastUpdatedProcessing) + 1);
+                    } else {
+                        mapData.set(lastUpdatedProcessing, 1);
                     }
                 }
             });
@@ -447,21 +455,26 @@
             let modifier = caught ? 1 : -1;
             
             let lastUpdated;
+            let lastUpdatedProcessing = item.getAttribute("lastUpdatedProcessing")
+            const oldDate = item.getAttribute('lastUpdatedCaught');
+            if (oldDate) {
+                tracker.modifySquare(new Date(oldDate), -1);
+            }
             if (caught) {
                 const currentDate = new Date().toISOString().split('T')[0];
-                const oldDate = item.getAttribute('lastUpdated');
-                if (oldDate) {
-                    tracker.modifySquare(new Date(oldDate), -1);
-                }
                 tracker.modifySquare(new Date(currentDate), 1);
-                item.setAttribute('lastUpdated', currentDate);
+                item.setAttribute('lastUpdatedCaught', currentDate);
                 lastUpdated = currentDate;
             }
             else{
                 lastUpdated = "";
-                item.setAttribute('lastUpdated', "");
+                item.setAttribute('lastUpdatedCaught', "");
+                item.setAttribute('lastUpdatedProcessing', "");
+                if (oldDate) {
+                    tracker.modifySquare(new Date(oldDate), -1);
+                }
             }
-            savePokemonData({ identifier: identifier, caught: caught, processing: processing, lastUpdated: lastUpdated });
+            savePokemonData({ identifier: identifier, caught: caught, processing: processing, lastUpdatedCaught: lastUpdated, lastUpdatedProcessing: lastUpdatedProcessing });
             showPokemonInfo(identifier, event);
             updateProgress("Caught", getProgress("overall", "Caught") + modifier, "#6ddd87", item.getAttribute('catchGeneration'), item.getAttribute('huntMethod'));
             updateProgress("Processing", processingTotal, "#ffa500", item.getAttribute('catchGeneration'), item.getAttribute('huntMethod'));
@@ -481,22 +494,22 @@
 
 
             let lastUpdated;
+            const oldDate = item.getAttribute('lastUpdatedProcessing');
+            if (oldDate) {
+                tracker.modifySquare(new Date(oldDate), -1);
+            }
             if (modifier > 0) {
                 const currentDate = new Date().toISOString().split('T')[0];
-                const oldDate = item.getAttribute('lastUpdated');
-                if (oldDate) {
-                    tracker.modifySquare(new Date(oldDate), -1);
-                }
                 tracker.modifySquare(new Date(currentDate), 1);
-                item.setAttribute('lastUpdated', currentDate);
+                item.setAttribute('lastUpdatedProcessing', currentDate);
                 lastUpdated = currentDate;
             }
             else{
                 lastUpdated = "";
-                item.setAttribute('lastUpdated', "");
+                item.setAttribute('lastUpdatedProcessing', "");
             }
             
-            savePokemonData({ identifier: identifier, processing: item.classList.contains('processing'), lastUpdated: lastUpdated });
+            savePokemonData({ identifier: identifier, processing: item.classList.contains('processing'), lastUpdatedProcessing: lastUpdated });
             updateProgress("Processing", getProgress("overall", "Processing") + modifier, "#ffa500", item.getAttribute('catchGeneration'), item.getAttribute('huntMethod'));
         }
 
@@ -735,7 +748,7 @@
             {% for pokemon in pokemons %}
                 <div class="grid-item {% if pokemon.caught | lower == 'true' %}caught{% endif %} {% if pokemon.method | lower == 'true' %}has-method{% endif %} {% if pokemon.processing | lower == 'true' %}processing{% endif %} {% if pokemon.shinyLocked | lower == 'true' %}shiny-locked{% endif %}"
                     huntMethod="{{ pokemon.huntMethod }}" catchGeneration="{{ pokemon.catchGeneration }}"
-                    lastUpdated="{{ pokemon.lastUpdated }}"
+                    lastUpdatedProcessing="{{ pokemon.lastUpdatedProcessing }}" lastUpdatedCaught="{{ pokemon.lastUpdatedCaught }}"
                     onclick="toggleCaught(event)">
                     <p class="identifier">{{ pokemon.identifier | capitalize }}</p>
                     <div class="sprite {{ pokemon.sprite_id }}"></div>

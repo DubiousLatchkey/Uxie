@@ -94,11 +94,18 @@ def home():
                         total_shiny_locked += 1
 
                     # Get last updated date
-                    last_updated = save_data[row['identifier']].get('lastUpdated', None)
-                    if(last_updated):
-                        row['lastUpdated'] = last_updated
+                    last_updatedProcessing = save_data[row['identifier']].get('lastUpdatedProcessing', None)
+                    if(last_updatedProcessing):
+                        row['lastUpdatedProcessing'] = last_updatedProcessing
                     else:
-                        row['lastUpdated'] = ""
+                        row['lastUpdatedProcessing'] = ""
+                    
+                    last_updated_caught = save_data[row['identifier']].get('lastUpdatedCaught', None)
+                    if(last_updated_caught):
+                        row['lastUpdatedCaught'] = last_updated_caught
+                    else:
+                        row['lastUpdatedCaught'] = ""
+
                     
 
                     # Get if method and calc method stats
