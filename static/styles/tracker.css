@@ -98,7 +98,7 @@
 }
 
 .square:hover::after {
-    content: attr(data-date) ' - ' attr(data-count) ' updates';
+    content: attr(data-date) ' - ' attr(data-count) ' update(s)';
     position: absolute;
     top: -25px;
     left: 50%;

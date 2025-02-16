@@ -319,6 +319,35 @@
                 flex-direction: column;
                 width: 100%;
             }
+            /* Date Pickers Styling */
+            .date-pickers {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                width: 100%;
+                margin-top: 15px;
+                padding-top: 10px;
+                border-top: 1px solid #eee;
+            }
+
+            .date-picker {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .date-picker label {
+                font-size: 0.9rem;
+                color: #333;
+                margin-bottom: 4px;
+            }
+
+            .date-picker input[type="date"] {
+                padding: 8px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background-color: #f9f9f9;
+                font-size: 0.9rem;
+            }
     </style>
 
     <script>
@@ -555,6 +584,18 @@
             }
         }
 
+        function updateDate(field, value) {
+            // Build a data object with the current Pokémon identifier.
+            const dataToSave = {
+                identifier: currentPokemon,
+            };
+            // Add the updated date field
+            dataToSave[field] = value;
+            if (currentPokemon) {
+                savePokemonData(dataToSave);
+            }
+        }
+
         // Show the sidebar and load data
         function showPokemonInfo(pokemon, event) {
             currentPokemon = pokemon;
@@ -667,6 +708,7 @@
             fetch(`/getPokemonData/${pokemon}`)
                 .then(response => response.json())
                 .then(data => {
+                    // Show hunt method
                     if (data.catchGeneration && data.huntMethod) {
                         currentGeneration = data.catchGeneration;
                         currentMethod = data.huntMethod;
@@ -680,6 +722,19 @@
                             // Set attempts input value
                             document.getElementById('attempts-input').value = data.attempts || 0;
                         }
+                    }
+                    // Show dates
+                    if(data.lastUpdatedCaught){
+                        document.getElementById('last-updated-caught').value = data.lastUpdatedCaught;
+                    }
+                    else{
+                        document.getElementById('last-updated-caught').value = ""
+                    }
+                    if(data.lastUpdatedProcessing){
+                        document.getElementById('last-updated-processing').value = data.lastUpdatedProcessing;
+                    }
+                    else{
+                        document.getElementById('last-updated-processing').value = ""
                     }
                 })
                 .catch(error => {
@@ -793,6 +848,18 @@
             <div class="buttons">
                 <button onclick="saveAttempts(event)">Save</button>
                 <button onclick="clearAttempts(event)">Clear</button>
+            </div>
+
+            <!-- Date Pickers Section -->
+            <div class="date-pickers">
+                <div class="date-picker">
+                <label for="last-updated-processing">Caught</label>
+                <input type="date" id="last-updated-processing" onchange="updateDate('lastUpdatedProcessing', this.value)">
+                </div>
+                <div class="date-picker">
+                <label for="last-updated-caught">Finished Processing</label>
+                <input type="date" id="last-updated-caught" onchange="updateDate('lastUpdatedCaught', this.value)">
+                </div>
             </div>
         </div>
     </div>
