@@ -92,6 +92,13 @@ def home():
                     row['shinyLocked'] = shinyLocked
                     if(shinyLocked):
                         total_shiny_locked += 1
+
+                    # Get last updated date
+                    last_updated = save_data[row['identifier']].get('lastUpdated', None)
+                    if(last_updated):
+                        row['lastUpdated'] = last_updated
+                    else:
+                        row['lastUpdated'] = ""
                     
 
                     # Get if method and calc method stats

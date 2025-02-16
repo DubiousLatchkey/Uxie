@@ -1,0 +1,112 @@
+:root {
+    --cell-size: 12px;
+    --gap-size: 2px;
+}
+
+.tracker-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background: white;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    margin-bottom: 10px;
+}
+
+/* Month labels grid on top */
+.month-labels {
+    display: grid;
+    grid-template-columns: repeat(52, var(--cell-size));
+    gap: var(--gap-size);
+    font-size: 10px;
+    margin-bottom: 8px;
+    text-align: center;
+    color: #333;
+}
+
+/* Two-column grid for week labels and tracker */
+.tracker-with-labels {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+}
+
+/* Week labels as a grid with 7 rows, placing labels only on specific rows */
+.week-labels {
+    display: grid;
+    grid-template-rows: repeat(7, var(--cell-size));
+    row-gap: var(--gap-size);
+    font-size: 10px;
+    color: #555;
+    text-align: right;
+    padding-right: 5px;
+}
+
+/* Place labels in the appropriate grid rows */
+.week-labels div {
+    /* Default: leave empty if no label is needed */
+}
+
+.week-labels .sun {
+    grid-row: 1;
+}
+
+.week-labels .wed {
+    grid-row: 4;
+}
+
+.week-labels .sat {
+    grid-row: 7;
+}
+
+/* Tracker grid for squares */
+.tracker {
+    display: grid;
+    grid-template-columns: repeat(52, var(--cell-size));
+    grid-template-rows: repeat(7, var(--cell-size));
+    gap: var(--gap-size);
+}
+
+.square {
+    width: var(--cell-size);
+    height: var(--cell-size);
+    background-color: #ebedf0;
+    transition: background-color 0.3s;
+    border-radius: 3px;
+    position: relative;
+}
+
+.square.level-0 {
+    background-color: #ebedf0;
+}
+
+.square.level-1 {
+    background-color: #9be9a8;
+}
+
+.square.level-2 {
+    background-color: #40c463;
+}
+
+.square.level-3 {
+    background-color: #30a14e;
+}
+
+.square.level-4 {
+    background-color: #216e39;
+}
+
+.square:hover::after {
+    content: attr(data-date) ' - ' attr(data-count) ' updates';
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.75);
+    color: white;
+    padding: 4px 6px;
+    font-size: 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+}

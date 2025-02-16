@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='spritesheet.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/progressbar.css') }}">
     <script src="{{ url_for('static', filename='scripts/progressbar.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/tracker.css') }}">
+    <script src="{{ url_for('static', filename='scripts/tracker.js') }}"></script>
     <style>
         body {
             display: flex;
@@ -18,7 +20,7 @@
             padding: 20px;
         }
 
-        .tracker {
+        .pokedex {
             align-items: center;
             justify-content: center;
         }
@@ -323,6 +325,7 @@
         let currentPokemon = null;
         let currentGeneration = null;
         let currentMethod = null;
+        let tracker = null;
 
         document.addEventListener("DOMContentLoaded", function () {
             setProgress("overall", [
@@ -352,6 +355,26 @@
                     content.style.display = "flex";
                 }
             });
+
+            // Initialize tracker
+            tracker = new GreenSquareTracker('tracker', 'month-labels');
+            tracker.initialize();
+
+            // Create a map of last updated dates and counts
+            const mapData = new Map();
+            document.querySelectorAll('.grid-item').forEach(item => {
+                const lastUpdated = item.getAttribute('lastUpdated');
+                if (lastUpdated) {
+                    if (mapData.has(lastUpdated)) {
+                        mapData.set(lastUpdated, mapData.get(lastUpdated) + 1);
+                    } else {
+                        mapData.set(lastUpdated, 1);
+                    }
+                }
+            });
+
+            // Call the group update function of the tracker
+            tracker.setSquaresFromMap(mapData);
         });
 
         function updateProgress(name, value, color, generation, method) {
@@ -422,8 +445,23 @@
             const identifier = item.querySelector('.identifier').textContent.trim().toLowerCase();
             const caught = item.classList.contains('caught');
             let modifier = caught ? 1 : -1;
-
-            savePokemonData({ identifier: identifier, caught: caught, processing: processing });
+            
+            let lastUpdated;
+            if (caught) {
+                const currentDate = new Date().toISOString().split('T')[0];
+                const oldDate = item.getAttribute('lastUpdated');
+                if (oldDate) {
+                    tracker.modifySquare(new Date(oldDate), -1);
+                }
+                tracker.modifySquare(new Date(currentDate), 1);
+                item.setAttribute('lastUpdated', currentDate);
+                lastUpdated = currentDate;
+            }
+            else{
+                lastUpdated = "";
+                item.setAttribute('lastUpdated', "");
+            }
+            savePokemonData({ identifier: identifier, caught: caught, processing: processing, lastUpdated: lastUpdated });
             showPokemonInfo(identifier, event);
             updateProgress("Caught", getProgress("overall", "Caught") + modifier, "#6ddd87", item.getAttribute('catchGeneration'), item.getAttribute('huntMethod'));
             updateProgress("Processing", processingTotal, "#ffa500", item.getAttribute('catchGeneration'), item.getAttribute('huntMethod'));
@@ -440,11 +478,25 @@
             const identifier = item.querySelector('.identifier').textContent.trim().toLowerCase();
             item.classList.toggle('processing');
             let modifier = item.classList.contains('processing') ? 1 : -1;
+
+
+            let lastUpdated;
+            if (modifier > 0) {
+                const currentDate = new Date().toISOString().split('T')[0];
+                const oldDate = item.getAttribute('lastUpdated');
+                if (oldDate) {
+                    tracker.modifySquare(new Date(oldDate), -1);
+                }
+                tracker.modifySquare(new Date(currentDate), 1);
+                item.setAttribute('lastUpdated', currentDate);
+                lastUpdated = currentDate;
+            }
+            else{
+                lastUpdated = "";
+                item.setAttribute('lastUpdated', "");
+            }
             
-            savePokemonData({
-                identifier: identifier,
-                processing: item.classList.contains('processing')
-            });
+            savePokemonData({ identifier: identifier, processing: item.classList.contains('processing'), lastUpdated: lastUpdated });
             updateProgress("Processing", getProgress("overall", "Processing") + modifier, "#ffa500", item.getAttribute('catchGeneration'), item.getAttribute('huntMethod'));
         }
 
@@ -629,7 +681,7 @@
     </script>
 </head>
 <body>
-    <div class="tracker">
+    <div class="pokedex">
         <h1>Pokedex Tracker</h1>
         <div class="progress-wrapper">
             <h2>Overall Progress</h2>
@@ -657,6 +709,25 @@
             </div>
             {% endfor %}
         </div>
+
+        <!-- Stats by date -->
+        <div class="tracker-container">
+            <!-- Month labels grid -->
+            <div id="month-labels" class="month-labels"></div>
+            <!-- Tracker grid with left-side week labels -->
+            <div class="tracker-with-labels">
+              <div class="week-labels">
+                <div class="sun">Sun</div>
+                <div></div>
+                <div></div>
+                <div class="wed">Wed</div>
+                <div></div>
+                <div></div>
+                <div class="sat">Sat</div>
+              </div>
+              <div id="tracker" class="tracker"></div>
+            </div>
+          </div>
         
         {% set start_id = 1 %}
         <div class="grid-container">
@@ -664,6 +735,7 @@
             {% for pokemon in pokemons %}
                 <div class="grid-item {% if pokemon.caught | lower == 'true' %}caught{% endif %} {% if pokemon.method | lower == 'true' %}has-method{% endif %} {% if pokemon.processing | lower == 'true' %}processing{% endif %} {% if pokemon.shinyLocked | lower == 'true' %}shiny-locked{% endif %}"
                     huntMethod="{{ pokemon.huntMethod }}" catchGeneration="{{ pokemon.catchGeneration }}"
+                    lastUpdated="{{ pokemon.lastUpdated }}"
                     onclick="toggleCaught(event)">
                     <p class="identifier">{{ pokemon.identifier | capitalize }}</p>
                     <div class="sprite {{ pokemon.sprite_id }}"></div>
