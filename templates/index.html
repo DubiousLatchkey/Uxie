@@ -597,12 +597,12 @@
                 savePokemonData(dataToSave);
             }
             if(field == "lastUpdatedCaught"){
-                tracker.modifySquare(new Date(currentCaughtDate), -1);
+                if(currentCaughtDate.length > 0){ tracker.modifySquare(new Date(currentCaughtDate), -1);}
                 currentCaughtDate = value
                 
             }
             else if(field == "lastUpdatedProcessing"){
-                tracker.modifySquare(new Date(currentProcessingDate), -1);
+                if(currentProcessingDate.length > 0){ tracker.modifySquare(new Date(currentProcessingDate), -1); }
                 currentProcessingDate = value
             }
             tracker.modifySquare(new Date(value), 1);
