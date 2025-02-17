@@ -355,6 +355,8 @@
         let currentGeneration = null;
         let currentMethod = null;
         let tracker = null;
+        let currentCaughtDate = "";
+        let currentProcessingDate = "";
 
         document.addEventListener("DOMContentLoaded", function () {
             setProgress("overall", [
@@ -594,6 +596,16 @@
             if (currentPokemon) {
                 savePokemonData(dataToSave);
             }
+            if(field == "lastUpdatedCaught"){
+                tracker.modifySquare(new Date(currentCaughtDate), -1);
+                currentCaughtDate = value
+                
+            }
+            else if(field == "lastUpdatedProcessing"){
+                tracker.modifySquare(new Date(currentProcessingDate), -1);
+                currentProcessingDate = value
+            }
+            tracker.modifySquare(new Date(value), 1);
         }
 
         // Show the sidebar and load data
@@ -726,15 +738,19 @@
                     // Show dates
                     if(data.lastUpdatedCaught){
                         document.getElementById('last-updated-caught').value = data.lastUpdatedCaught;
+                        currentCaughtDate = data.lastUpdatedCaught
                     }
                     else{
                         document.getElementById('last-updated-caught').value = ""
+                        currentCaughtDate = ""
                     }
                     if(data.lastUpdatedProcessing){
                         document.getElementById('last-updated-processing').value = data.lastUpdatedProcessing;
+                        currentProcessingDate = data.lastUpdatedProcessing
                     }
                     else{
                         document.getElementById('last-updated-processing').value = ""
+                        currentProcessingDate = ""
                     }
                 })
                 .catch(error => {
