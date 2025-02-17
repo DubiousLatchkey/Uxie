@@ -492,7 +492,7 @@
                 tracker.modifySquare(new Date(oldDate), -1);
             }
             if (caught) {
-                const currentDate = new Date().toISOString().split('T')[0];
+                const currentDate = new Date().toLocaleDateString('sv-SE').split('T')[0];
                 tracker.modifySquare(new Date(currentDate), 1);
                 item.setAttribute('lastUpdatedCaught', currentDate);
                 lastUpdated = currentDate;
@@ -530,7 +530,7 @@
                 tracker.modifySquare(new Date(oldDate), -1);
             }
             if (modifier > 0) {
-                const currentDate = new Date().toISOString().split('T')[0];
+                const currentDate = new Date().toLocaleDateString('sv-SE').split('T')[0];
                 tracker.modifySquare(new Date(currentDate), 1);
                 item.setAttribute('lastUpdatedProcessing', currentDate);
                 lastUpdated = currentDate;
