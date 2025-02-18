@@ -28,7 +28,7 @@ class GreenSquareTracker {
             for (let w = 0; w < this.columns; w++) {
                 const date = new Date(this.startDate);
                 date.setDate(this.startDate.getDate() + d + w * 7);
-                const dateString = date.toISOString().split('T')[0];
+                const dateString = date.toLocaleDateString('sv-SE').split('T')[0];
                 const square = document.createElement('div');
                 square.classList.add('square');
                 square.setAttribute('data-date', dateString);
@@ -79,7 +79,7 @@ class GreenSquareTracker {
     }
 
     updateSquare(date, count) {
-        const dateString = date.toISOString().split('T')[0];
+        const dateString = date.toLocaleDateString('sv-SE').split('T')[0];
         if (this.squares.has(dateString)) {
             const square = this.squares.get(dateString);
             // Remove any existing level classes
@@ -95,7 +95,7 @@ class GreenSquareTracker {
     }
 
     modifySquare(date, delta) {
-        const dateString = date.toISOString().split('T')[0];
+        const dateString = date.toLocaleDateString('sv-SE').split('T')[0];
         if (this.squares.has(dateString)) {
             const square = this.squares.get(dateString);
             let currentCount = parseInt(square.getAttribute('data-count')) || 0;
