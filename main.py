@@ -1,10 +1,20 @@
-from flask import Flask, jsonify, render_template, request, redirect, url_for
+from flask import Flask, jsonify, render_template, request, redirect, url_for, session
 import csv
 import os
 import shutil
 import json
+from flask_dance.contrib.github import make_github_blueprint, github
+from dotenv import load_dotenv
+
+load_dotenv() 
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "supersekrit")
+app.config["GITHUB_OAUTH_CLIENT_ID"] = os.environ.get("GITHUB_OAUTH_CLIENT_ID")
+app.config["GITHUB_OAUTH_CLIENT_SECRET"] = os.environ.get("GITHUB_OAUTH_CLIENT_SECRET")
+
+github_blueprint = make_github_blueprint(client_id="Ov23liK6z1gyjZR9MY73", client_secret=app.secret_key)
+app.register_blueprint(github_blueprint, url_prefix="/login")
 
 generationShinyEncounterMethods = {
     1: [],
@@ -59,6 +69,20 @@ pokemons = load_pokemon()
 
 @app.route('/')
 def home():
+    auth = False
+    if(github.authorized):
+        resp = github.get("/user")
+        if not resp.ok:
+            return "Failed to fetch user info from GitHub", 500
+        
+        github_info = resp.json()
+        username = github_info.get("login")
+
+        if(username == os.environ.get("AUTHORIZED_USER")):
+            auth = True
+        else:
+            print(username, " not allowed to write")
+    
     pokemon_list = []
     total_shiny_locked = 0
     total_caught = 0
@@ -163,11 +187,25 @@ def home():
             "method_stats": method_stats
         }
 
-        return render_template('index.html', pokemons=pokemon_list, stats=stats)
+        return render_template('index.html', pokemons=pokemon_list, stats=stats, auth=auth)
 
 # Writes data to save.json
 @app.route('/save', methods=['POST'])
 def save_pokemon_data():
+
+    # For saving, check if the user is authenticated and is you
+    if not github.authorized:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    resp = github.get("/user")
+    if not resp.ok:
+        return jsonify({"error": "Failed to fetch user info"}), 500
+
+    username = resp.json().get("login")
+    if username != os.environ.get("AUTHORIZED_USER"):
+        return jsonify({"error": "You are not allowed to write data."}), 403
+    
+    # Handle save request
     data = request.get_json()
     if not data or 'identifier' not in data:
         return jsonify({"error": "Pokemon identifier is required"}), 400
@@ -217,6 +255,20 @@ def download_save():
 # Upload save file
 @app.route('/uploadSave', methods=['POST'])
 def upload_save():
+
+    # For saving, check if the user is authenticated and is you
+    if not github.authorized:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    resp = github.get("/user")
+    if not resp.ok:
+        return jsonify({"error": "Failed to fetch user info"}), 500
+
+    username = resp.json().get("login")
+    if username != os.environ.get("AUTHORIZED_USER"):
+        return jsonify({"error": "You are not allowed to write data."}), 403
+
+
     data = request.get_json()
     if not data:
         return jsonify({"error": "No data found"}), 400
@@ -228,6 +280,13 @@ def upload_save():
     save_data = load_or_create_save()
 
     return jsonify({"message": "Save data uploaded"})
+
+@app.route("/logout")
+def logout():
+    """Logs out the user by removing the GitHub OAuth token from the session."""
+    session.pop("github_oauth_token", None)  # Remove GitHub token
+    return redirect(url_for("home"))  # Redirect to homepage
+
 
 if __name__ == '__main__':
     app.run(debug=True)

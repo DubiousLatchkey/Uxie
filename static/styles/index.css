@@ -1,0 +1,389 @@
+body {
+    display: flex;
+    flex-direction: column;
+    /* Align grid and sidebar horizontally */
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+    margin: 0;
+}
+
+.main {
+    display: flex;
+    box-sizing: border-box;
+    justify-content: space-between;
+    padding: 20px;
+    width: 100%;
+    margin: 0;
+}
+
+.pokedex {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-width: max-content;
+}
+
+h1 {
+    text-align: center;
+    width: 100%;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* Sidebar Styling */
+.sidebar {
+    /* Initially hide the sidebar */
+    display: none;
+    flex-direction: column;
+    width: 30%;
+    position: sticky;
+    top: 20px;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: #fff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    height: 95vh;
+    align-items: center;
+}
+
+.sidebar h2 {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.pokemon-info {
+    display: flex;
+    flex-direction: column;
+    width: 85%;
+}
+
+.pokemon-info.active {
+    display: block;
+}
+
+.generations {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: stretch;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    width: 100%;
+}
+
+.methods {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.generations .selector {
+    margin: 0px 0px;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    background-color: #f1f1f1;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    text-align: center;
+    flex-grow: 1;
+    /* Allow each child to grow and take up equal space */
+    flex-shrink: 0;
+    /* Prevent child elements from shrinking */
+    flex-basis: 0;
+    /* Allow child elements to have equal width */
+    box-sizing: border-box;
+    /* Ensure padding and borders do not affect the width */
+}
+
+.methods .selector {
+    margin: 0px 0px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    background-color: #f1f1f1;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.generations .selector:hover,
+.methods .selector:hover,
+.generations .selected,
+.methods .selected {
+    background-color: #6ddd87;
+}
+
+/* Grid container */
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0px;
+    flex-grow: 1;
+    /* Allow grid to take up remaining space */
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.grid-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0;
+    width: 130px;
+    height: 130px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    border: 2px solid transparent;
+    position: relative;
+    /* For positioning the icons */
+}
+
+.grid-item:hover {
+    border: 2px solid #007bff;
+}
+
+.grid-item.has-method {
+    background-color: #e0e0e0;
+}
+
+.grid-item.caught {
+    background-color: #6ddd87;
+}
+
+.grid-item.processing {
+    background-color: #ffa500;
+}
+
+.grid-item.shiny-locked {
+    background-color: #ff5757;
+}
+
+.grid-item .sprite {
+    display: inline-block;
+    width: 96px;
+    height: 96px;
+}
+
+.grid-item p {
+    margin: 0;
+    font-size: 0.85em;
+    color: #555;
+    text-align: center;
+}
+
+.grid-item .identifier {
+    font-size: 1em;
+    color: #333;
+    margin-bottom: 3px;
+}
+
+.grid-item .id {
+    font-size: 0.75em;
+    color: #777;
+}
+
+/* Info icon styling (bottom-right) */
+.info-icon {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    font-size: 1.2em;
+    color: #007bff;
+    cursor: pointer;
+    display: none;
+}
+
+.grid-item:hover .info-icon {
+    display: block;
+}
+
+/* Processing icon styling (bottom-left) */
+.process-icon {
+    position: absolute;
+    bottom: 5px;
+    left: 5px;
+    font-size: 1.2em;
+    color: #007bff;
+    cursor: pointer;
+    display: none;
+    border-radius: 3px;
+}
+
+/* Shiny lock icon styling (top-right) */
+.shiny-locked-icon {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    font-size: 1.2em;
+    cursor: pointer;
+    display: none;
+}
+
+.grid-item:hover .shiny-locked-icon {
+    display: block;
+}
+
+.grid-item.shiny-locked .shiny-locked-icon {
+    display: block;
+}
+
+.grid-item:hover .process-icon {
+    display: block;
+}
+
+/* Attempts styling */
+.attempts {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.attempts label {
+    font-weight: bold;
+    color: #555;
+}
+
+.attempts input {
+    width: 60px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.buttons {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.buttons button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    background-color: #007bff;
+    color: #fff;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.buttons button:hover {
+    background-color: #0056b3;
+}
+
+.sidebar-header {
+    position: relative;
+    /* Allows absolute positioning of the button */
+    padding: 10px 20px;
+    text-align: center;
+    /* Centers the h2 horizontally */
+}
+
+/* Ensure the heading has no extra margin 
+so it truly appears centered in the header */
+.sidebar-header .name {
+    margin: 0;
+}
+
+/* The close button is absolutely positioned to the right */
+.close-btn {
+    position: absolute;
+    top: 50%;
+    right: 0px;
+    transform: translateY(-50%);
+    cursor: pointer;
+}
+
+.collapsible {
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    padding: 10px;
+    width: 100%;
+    border: none;
+    text-align: center;
+    outline: none;
+    font-size: 15px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.collapsible:hover {
+    background-color: #0056b3;
+}
+
+.content {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+}
+
+/* Date Pickers Styling */
+.date-pickers {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+}
+
+.date-picker {
+    display: flex;
+    flex-direction: column;
+}
+
+.date-picker label {
+    font-size: 0.9rem;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.date-picker input[type="date"] {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    font-size: 0.9rem;
+}
+
+header {
+    background-color: #333;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.header h1 {
+    color: white;
+    font-size: 20px;
+    margin: 0;
+    text-align: left;
+}
+
+.header a {
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+    padding: 8px 12px;
+}
+
+.header a:hover {
+    background-color: #555;
+    border-radius: 4px;
+}
