@@ -54,6 +54,20 @@ h1 {
     text-align: center;
 }
 
+.sidebar h2 a:visited {
+    color: inherit;
+    text-decoration: none;
+}
+.sidebar h2 a {
+    display: inline-block;
+    color: inherit;
+    text-decoration: none;
+    transition: transform 0.2s ease
+}
+.sidebar h2 a:hover {
+    transform: scale(1.05);
+}
+
 .pokemon-info {
     display: flex;
     flex-direction: column;
