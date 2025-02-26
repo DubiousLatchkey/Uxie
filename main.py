@@ -5,6 +5,7 @@ import shutil
 import json
 from flask_dance.contrib.github import make_github_blueprint, github
 from dotenv import load_dotenv
+from flask_cors import CORS, cross_origin
 
 load_dotenv() 
 
@@ -15,6 +16,9 @@ app.config["GITHUB_OAUTH_CLIENT_SECRET"] = os.environ.get("GITHUB_OAUTH_CLIENT_S
 
 github_blueprint = make_github_blueprint(client_id="Ov23liK6z1gyjZR9MY73", client_secret=app.secret_key)
 app.register_blueprint(github_blueprint, url_prefix="/login")
+
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 generationShinyEncounterMethods = {
     1: [],
@@ -289,4 +293,4 @@ def logout():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="192.168.5.234", port=80, debug=True)
