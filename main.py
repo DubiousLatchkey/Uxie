@@ -6,6 +6,7 @@ import json
 from flask_dance.contrib.github import make_github_blueprint, github
 from dotenv import load_dotenv
 from flask_cors import CORS, cross_origin
+from waitress import serve
 
 load_dotenv() 
 
@@ -293,4 +294,5 @@ def logout():
 
 
 if __name__ == '__main__':
-    app.run(host="192.168.5.234", port=80, debug=True)
+    serve(app, host="0.0.0.0", port=80)
+    #app.run(host="0.0.0.0", port=80, debug=True)
