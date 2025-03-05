@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/tracker.css') }}">
 
     <script src="{{ url_for('static', filename='scripts/tracker.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/html-duration-picker.min.js') }}"></script>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/index.css') }}">
     <script src="{{ url_for('static', filename='scripts/writeScripts.js') }}"></script>
@@ -234,8 +235,18 @@
                             if (methodButton) {
                                 methodButton.classList.add('selected');
                             }
-                            // Set attempts input value
+                            // Set attempts stats
                             document.getElementById('attempts-input').value = data.attempts || 0;
+                            document.getElementById('duration-input').value = data.time || "00:00:00";
+                            const attemptsTooltip = document.getElementById('attempt-time-tooltip');
+                            if ((data.attempts || 0) > 0 && data.time) {
+                                const [hours, minutes, seconds] = data.time.split(':').map(Number);
+                                const totalSeconds = (hours * 3600) + (minutes * 60) + seconds;
+                                const secondsPerAttempt = (totalSeconds / data.attempts).toFixed(2);
+                                attemptsTooltip.textContent = `${secondsPerAttempt} sec/attempt`;
+                            } else {
+                                attemptsTooltip.textContent = 'No data on average attempt time';
+                            }
                         }
                     }
                     // Show dates
@@ -367,10 +378,19 @@
                 <div class="methods"></div>
                 <p class="details"></p>
                 
-                <!-- Attempts Section -->
+                <!-- Attempts Stats Section -->
                 <div class="attempts">
-                    <label for="attempts-input">Attempts:</label>
-                    <input type="number" id="attempts-input" min="0" value="0">
+                    <div class="attempts-time-container boxed">
+                        <div class="input-group">
+                            <span>Attempts</span>
+                            <input type="number" id="attempts-input" min="0" value="0">
+                        </div>
+                        <div class="input-group">
+                            <span class="tooltip-container">Time<div id="attempt-time-tooltip" class="tooltip"> Seconds per attempt</div></span>
+                            
+                            <input type="text" id="duration-input" class="html-duration-picker" data-duration="00:00:00">
+                        </div>
+                    </div>
                 </div>
 
                 <div class="buttons">

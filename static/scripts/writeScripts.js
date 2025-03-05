@@ -130,15 +130,34 @@ function toggleShinyLock(event){
 
 function saveAttempts(event) {
     const attempts = document.getElementById('attempts-input').value;
+    const duration = document.getElementById('duration-input').value;
+
+    // Update the tooltip to show seconds per attempt
+    const [hours, minutes, seconds] = duration.split(':').map(Number);
+    const totalSeconds = (hours * 3600) + (minutes * 60) + seconds;
+    const attemptsTooltip = document.getElementById('attempt-time-tooltip');
+    if (attempts > 0) {
+        const secondsPerAttempt = (totalSeconds / attempts).toFixed(2);
+        attemptsTooltip.textContent = `${secondsPerAttempt} sec/attempt`;
+    } else {
+        attemptsTooltip.textContent = 'No data on average attempt time';
+    }
+
     if (currentPokemon) {
-        savePokemonData({ identifier: currentPokemon, attempts: attempts });
+        savePokemonData({ identifier: currentPokemon, attempts: attempts, time: duration });
     }
 }
 
 function clearAttempts(event) {
     document.getElementById('attempts-input').value = 0;
+    document.getElementById('duration-input').value = "00:00:00";
+
+    // Update the tooltip to show seconds per attempt as no data
+    const attemptsTooltip = document.getElementById('attempt-time-tooltip');
+    attemptsTooltip.textContent = 'No data on average attempt time';
+
     if (currentPokemon) {
-        savePokemonData({ identifier: currentPokemon, attempts: 0 });
+        savePokemonData({ identifier: currentPokemon, attempts: 0, time: 0});
     }
 }
 
