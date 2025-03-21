@@ -133,12 +133,12 @@ function saveAttempts(event) {
     const duration = document.getElementById('duration-input').value;
 
     // Update the tooltip to show seconds per attempt
-    const [hours, minutes, seconds] = duration.split(':').map(Number);
-    const totalSeconds = (hours * 3600) + (minutes * 60) + seconds;
+    const totalSeconds = textToSeconds(duration);
     const attemptsTooltip = document.getElementById('attempt-time-tooltip');
     if (attempts > 0) {
         const secondsPerAttempt = (totalSeconds / attempts).toFixed(2);
-        attemptsTooltip.textContent = `${secondsPerAttempt} sec/attempt`;
+        
+        attemptsTooltip.textContent = `${convertSecondsToTimeString(secondsPerAttempt)} / attempt`;
     } else {
         attemptsTooltip.textContent = 'No data on average attempt time';
     }
@@ -146,6 +146,17 @@ function saveAttempts(event) {
     if (currentPokemon) {
         savePokemonData({ identifier: currentPokemon, attempts: attempts, time: duration });
     }
+}
+
+function convertSecondsToTimeString(seconds) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    const timeSegments = [];
+    if (h > 0) timeSegments.push(`${h}h`);
+    if (m > 0) timeSegments.push(`${m}m`);
+    if (s > 0 || timeSegments.length === 0) timeSegments.push(`${s}s`);
+    return timeSegments.join(' ');
 }
 
 function clearAttempts(event) {
@@ -181,4 +192,45 @@ function updateDate(field, value) {
         currentProcessingDate = value
     }
     tracker.modifySquare(new Date(value), 1);
+}
+
+// Functions for adding a new set of attempt and duration to the running count 
+
+function textToSeconds(text) {
+    const [hours, minutes, seconds] = text.split(':').map(Number);
+    return (hours * 3600) + (minutes * 60) + seconds;
+}
+
+function secondsToText(seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+
+function openTimeModal(event){
+    const modal = document.getElementById("attempt-modal");
+    modal.style.display = "flex";
+}
+
+function addAndSave(event){
+    const modal = document.getElementById("attempt-modal");
+    const addAttempts = document.getElementById("add-attempts").value;
+    const addDuration = document.getElementById("add-duration").value;
+    const attempts = document.getElementById("attempts-input").value;
+    const duration = document.getElementById("duration-input").value;
+    const totalAttempts = parseInt(attempts) + parseInt(addAttempts);
+    const totalDuration = textToSeconds(duration) + textToSeconds(addDuration);
+    document.getElementById("attempts-input").value = totalAttempts;
+    document.getElementById("duration-input").value = secondsToText(totalDuration);
+    
+    saveAttempts(event);
+    modal.style.display = "none";
+    document.getElementById("add-attempts").value = 0;
+    document.getElementById("add-duration").value = "00:00:00";
+}
+
+function closeTimeModal(event){
+    const modal = document.getElementById("attempt-modal");
+    modal.style.display = "none";
 }

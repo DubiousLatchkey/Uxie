@@ -240,10 +240,8 @@
                             document.getElementById('duration-input').value = data.time || "00:00:00";
                             const attemptsTooltip = document.getElementById('attempt-time-tooltip');
                             if ((data.attempts || 0) > 0 && data.time) {
-                                const [hours, minutes, seconds] = data.time.split(':').map(Number);
-                                const totalSeconds = (hours * 3600) + (minutes * 60) + seconds;
-                                const secondsPerAttempt = (totalSeconds / data.attempts).toFixed(2);
-                                attemptsTooltip.textContent = `${secondsPerAttempt} sec/attempt`;
+                                const secondsPerAttempt = (textToSeconds(data.time) / data.attempts).toFixed(2);
+                                attemptsTooltip.textContent = `${convertSecondsToTimeString(secondsPerAttempt)} / attempt`;
                             } else {
                                 attemptsTooltip.textContent = 'No data on average attempt time';
                             }
@@ -280,44 +278,7 @@
             sidebar.querySelector('.name a').href = `https://bulbapedia.bulbagarden.net/wiki/${capitalizedPokemon}_(Pokémon)#Game_locations`;
         }
         
-        function textToSeconds(text) {
-            const [hours, minutes, seconds] = text.split(':').map(Number);
-            return (hours * 3600) + (minutes * 60) + seconds;
-        }
-
-        function secondsToText(seconds) {
-            const hours = Math.floor(seconds / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            const remainingSeconds = seconds % 60;
-            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-        }
-
-        function openTimeModal(event){
-            const modal = document.getElementById("attempt-modal");
-            modal.style.display = "flex";
-        }
-
-        function addAndSave(event){
-            const modal = document.getElementById("attempt-modal");
-            const addAttempts = document.getElementById("add-attempts").value;
-            const addDuration = document.getElementById("add-duration").value;
-            const attempts = document.getElementById("attempts-input").value;
-            const duration = document.getElementById("duration-input").value;
-            const totalAttempts = parseInt(attempts) + parseInt(addAttempts);
-            const totalDuration = textToSeconds(duration) + textToSeconds(addDuration);
-            document.getElementById("attempts-input").value = totalAttempts;
-            document.getElementById("duration-input").value = secondsToText(totalDuration);
-            
-            saveAttempts(event);
-            modal.style.display = "none";
-            document.getElementById("add-attempts").value = 0;
-            document.getElementById("add-duration").value = "00:00:00";
-        }
-
-        function closeTimeModal(event){
-            const modal = document.getElementById("attempt-modal");
-            modal.style.display = "none";
-        }
+        
     </script>
 </head>
 <body>
