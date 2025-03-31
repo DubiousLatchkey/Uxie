@@ -53,6 +53,45 @@ h1 {
     display: none;
 }
 
+@media screen and (max-width: 768px) {
+    /* Make the sidebar take full width and overlay content */
+    .sidebar {
+        position: fixed;
+        top: 50%;
+        left: 10px;
+        transform: translateY(-50%);
+        width: 50%;
+        height: 500px;
+        max-width: 100%;
+        margin: 0;
+        z-index: 1000;
+        border-radius: 20px;
+        padding: 0; /* Remove padding to accommodate fixed header */
+        box-sizing: border-box;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+        display: none;
+        flex-direction: column;
+    }
+
+    .sidebar-header {
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 1001;
+        padding: 15px;
+        width: 100%;
+        border-radius: 20px 20px 0 0;
+    }
+
+    .pokemon-info {
+        padding: 15px;
+        overflow-y: auto;
+        height: calc(100% - 50px); /* Adjust based on header height */
+    }
+
+
+}
+
 .sidebar h2 {
     margin-top: 10px;
     margin-bottom: 10px;
@@ -235,6 +274,20 @@ h1 {
     border-radius: 3px;
 }
 
+.grid-item:hover .process-icon {
+    display: block;
+}
+
+/* Mobile styles */
+@media screen and (max-width: 768px) {
+    .info-icon, .process-icon {
+        display: block;
+        font-size: 1.5em;
+        padding: 1px;
+    }
+
+}
+
 /* Shiny lock icon styling (top-right) */
 .shiny-locked-icon {
     position: absolute;
@@ -253,9 +306,7 @@ h1 {
     display: block;
 }
 
-.grid-item:hover .process-icon {
-    display: block;
-}
+
 
 /* Attempts styling */
 .attempts {
@@ -377,6 +428,8 @@ h1 {
     /* Allows absolute positioning of the button */
     padding: 10px 20px;
     text-align: center;
+    width: 100%;
+
     /* Centers the h2 horizontally */
 }
 
@@ -397,10 +450,18 @@ so it truly appears centered in the header */
 /* The close button is absolutely positioned to the right */
 .close-btn {
     position: absolute;
-    top: 50%;
-    right: 0px;
+    top: 40%;
+    right: 25px;
     transform: translateY(-50%);
     cursor: pointer;
+    font-size: 1.3em;
+    font-weight: thin;
+    color: #404040;
+}
+@media screen and (max-width: 768px) {
+    .close-btn {
+        right: 35px;
+    }
 }
 
 .collapsible {
@@ -444,6 +505,12 @@ so it truly appears centered in the header */
     flex-direction: column;
 }
 
+@media screen and (max-width: 768px) {
+    .date-pickers {
+        align-items: center;
+    }
+}
+
 .date-picker label {
     font-size: 0.9rem;
     color: #333;
@@ -466,6 +533,19 @@ header {
     align-items: center;
     width: 100%;
     box-sizing: border-box;
+}
+@media screen and (max-width: 768px) {
+    header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1002;
+    }
+
+    .main {
+        margin-top: 50px;
+    }
 }
 
 .header h1 {

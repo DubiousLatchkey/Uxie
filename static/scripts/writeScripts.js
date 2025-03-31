@@ -23,6 +23,13 @@ function savePokemonData(data) {
 function toggleCaught(event) {
     const item = event.currentTarget;
 
+    if (window.innerWidth <= 768 || navigator.maxTouchPoints > 0) {
+        // Show confirmation for mobile users
+        if (!confirm("Toggle caught status?")) {
+            return; // Stop if user cancels
+        }
+    }
+
     // If the item is shiny locked, do nothing
     if(item.classList.contains('shiny-locked')){
         return;

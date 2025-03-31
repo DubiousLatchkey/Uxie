@@ -24,6 +24,10 @@
         let currentCaughtDate = "";
         let currentProcessingDate = "";
 
+        function isMobileDevice() {
+            return (window.innerWidth <= 768 || navigator.maxTouchPoints > 0);
+        }
+
         document.addEventListener("DOMContentLoaded", function () {
             setProgress("overall", [
                 { name: "Caught", value: parseInt("{{ stats.total_caught }}"), color: "#6ddd87" },
@@ -125,6 +129,16 @@
 
             // Make sure the sidebar is visible
             sidebar.style.display = 'flex';
+
+            // If on mobile, adjust sidebar position based on click position
+            if (isMobileDevice()) {
+                const clickX = event.clientX;
+                const windowWidth = window.innerWidth;
+                const isRightSide = clickX > windowWidth / 2;
+                
+                sidebar.style.left = isRightSide ? '10px' : 'auto';
+                sidebar.style.right = isRightSide ? 'auto' : '10px';
+            }
 
             details.innerHTML = '';
             generations.innerHTML = '';
@@ -271,7 +285,7 @@
 
             // Update the Pokémon name in the sidebar
             const capitalizedPokemon = pokemon.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('-');
-            sidebar.querySelector('.pokemon-info .name a').textContent =
+            sidebar.querySelector('.name a').textContent =
                 capitalizedPokemon;
             sidebar.querySelector('.pokemon-info').classList.add('active');
             // Works for most pokemon except type null
@@ -369,11 +383,11 @@
         <!-- Sidebar (hidden by default) -->
         <div class="sidebar">
             <!-- Close button -->
+            <div class="sidebar-header">
+                <h2 class="name"><a href="/" target="_blank">Pokemon Information</a></h2>
+                <div class="close-btn" onclick="hideSidebar()">✖</div>
+            </div>
             <div class="pokemon-info">
-                <div class="sidebar-header">
-                    <h2 class="name"><a href="/" target="_blank">Pokemon Information</a></h2>
-                    <button class="close-btn" onclick="hideSidebar()">✖</button>
-                </div>
                 <div class="generations"></div>
                 <div class="methods"></div>
                 <p class="details"></p>
