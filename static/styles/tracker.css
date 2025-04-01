@@ -76,6 +76,10 @@
     transition: background-color 0.3s;
     border-radius: 3px;
     position: relative;
+    --hue: 139;
+    --saturation: 17%;
+    --lightness: 92%;
+    background-color: hsl(var(--hue), var(--saturation), var(--lightness));
 }
 
 .square.level-0 {

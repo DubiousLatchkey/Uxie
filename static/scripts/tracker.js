@@ -82,15 +82,22 @@ class GreenSquareTracker {
         const dateString = date.toISOString().split('T')[0];
         if (this.squares.has(dateString)) {
             const square = this.squares.get(dateString);
-            // Remove any existing level classes
-            for (let i = 0; i <= 4; i++) {
-                square.classList.remove(`level-${i}`);
-            }
+            
             // Set the full (actual) count for display
             square.setAttribute('data-count', count);
-            // Determine effective level (capped at 4) for background color.
-            const effectiveLevel = count > 0 ? Math.min(4, count) : 0;
-            square.classList.add(`level-${effectiveLevel}`);
+
+            // Determine effective lightness level for background color.
+            let inverseCountMultiplied = 92 - count * 5;
+            const effectiveLevel = inverseCountMultiplied > 20 ? Math.min(92, inverseCountMultiplied) : 20;
+            // square.classList.add(`level-${effectiveLevel}`);
+            square.style.setProperty('--lightness', effectiveLevel + "%");
+
+            if(count > 0) {
+                square.style.setProperty('--saturation', "55%");
+            }
+            else{
+                square.style.setProperty('--saturation', "17%");
+            }
         }
     }
 
