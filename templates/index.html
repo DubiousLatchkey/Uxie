@@ -352,9 +352,10 @@
             <div class="grid-container">
                 <h2 style="grid-column: 1 / -1;">{{ start_id }} - {{ start_id + 29 }}</h2>
                 {% for pokemon in pokemons %}
-                    <div class="grid-item {% if pokemon.caught | lower == 'true' %}caught{% endif %} {% if pokemon.method | lower == 'true' %}has-method{% endif %} {% if pokemon.processing | lower == 'true' %}processing{% endif %} {% if pokemon.shinyLocked | lower == 'true' %}shiny-locked{% endif %}"
+                    <div class="grid-item {% if pokemon.caught | lower == 'true' %}caught{% endif %} {% if pokemon.method | lower == 'true' %}has-method{% endif %} {% if pokemon.processing | lower == 'true' %}processing{% endif %} {% if pokemon.shinyLocked | lower == 'true' %}shiny-locked{% endif %} {% if pokemon.attempts > 0 %}in-progress{% endif %}"
                         huntMethod="{{ pokemon.huntMethod }}" catchGeneration="{{ pokemon.catchGeneration }}"
                         lastUpdatedProcessing="{{ pokemon.lastUpdatedProcessing }}" lastUpdatedCaught="{{ pokemon.lastUpdatedCaught }}"
+                        attempts="{{ pokemon.attempts}}"
                         {% if auth %} onclick="toggleCaught(event)" {% endif %}>
                         <p class="identifier">{{ pokemon.identifier | capitalize }}</p>
                         <div class="sprite {{ pokemon.sprite_id }}"></div>

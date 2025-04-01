@@ -210,6 +210,9 @@ h1 {
 .grid-item.has-method {
     background-color: #e0e0e0;
 }
+.grid-item.in-progress {
+    background-color: #d0d0d0;
+}
 
 .grid-item.caught {
     background-color: #6ddd87;

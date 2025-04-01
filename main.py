@@ -135,6 +135,12 @@ def home():
                     else:
                         row['lastUpdatedCaught'] = ""
 
+                    attempts = int(save_data[row['identifier']].get('attempts', 0))
+                    if (attempts > 0):
+                        row['attempts'] = attempts
+                    else:
+                        row['attempts'] = 0
+
                     
 
                     # Get if method and calc method stats
@@ -168,6 +174,7 @@ def home():
                     row['processing'] = False
                     row['shinyLocked'] = False
                     row['method'] = False
+                    row['attempts'] = 0
 
                 pokemon_list.append(row)
 

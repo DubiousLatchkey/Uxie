@@ -138,6 +138,8 @@ function toggleShinyLock(event){
 function saveAttempts(event) {
     const attempts = document.getElementById('attempts-input').value;
     const duration = document.getElementById('duration-input').value;
+    const gridItems = document.querySelectorAll('.grid-item');
+
 
     // Update the tooltip to show seconds per attempt
     const totalSeconds = textToSeconds(duration);
@@ -148,7 +150,21 @@ function saveAttempts(event) {
         attemptsTooltip.textContent = `${convertSecondsToTimeString(secondsPerAttempt)} / attempt`;
     } else {
         attemptsTooltip.textContent = 'No data on average attempt time';
+        
     }
+
+    // Update grid with in-progress class
+    gridItems.forEach(item => {
+        const itemIdentifier = item.querySelector('.identifier').textContent.trim().toLowerCase();
+        if (itemIdentifier === currentPokemon) {
+            if (attempts > 0) {
+                item.classList.add('in-progress');
+            }
+            else {
+                item.classList.remove('in-progress');
+            }
+        }
+    });
 
     if (currentPokemon) {
         savePokemonData({ identifier: currentPokemon, attempts: attempts, time: duration });
@@ -173,6 +189,14 @@ function clearAttempts(event) {
     // Update the tooltip to show seconds per attempt as no data
     const attemptsTooltip = document.getElementById('attempt-time-tooltip');
     attemptsTooltip.textContent = 'No data on average attempt time';
+
+    const gridItems = document.querySelectorAll('.grid-item');
+    gridItems.forEach(item => {
+        const itemIdentifier = item.querySelector('.identifier').textContent.trim().toLowerCase();
+        if (itemIdentifier === currentPokemon) {
+            item.classList.remove('in-progress');
+        }
+    });
 
     if (currentPokemon) {
         savePokemonData({ identifier: currentPokemon, attempts: 0, time: 0});
