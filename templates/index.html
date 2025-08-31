@@ -21,6 +21,7 @@
         let currentGeneration = null;
         let currentMethod = null;
         let tracker = null;
+        let processingTracker = null;
         let currentCaughtDate = "";
         let currentProcessingDate = "";
 
@@ -57,12 +58,15 @@
                 }
             });
 
-            // Initialize tracker
+            // Initialize trackers
             tracker = new GreenSquareTracker('tracker', 'month-labels');
+            processingTracker = new GreenSquareTracker('tracker-processing', 'month-labels-processing');
             tracker.initialize();
+            processingTracker.initialize();
 
-            // Create a map of last updated dates and counts
+            // Create maps of last updated dates and counts
             const mapData = new Map();
+            const mapProcessingData = new Map();
             document.querySelectorAll('.grid-item').forEach(item => {
                 const lastUpdatedCaught = item.getAttribute('lastUpdatedCaught');
                 if (lastUpdatedCaught) {
@@ -79,11 +83,17 @@
                     } else {
                         mapData.set(lastUpdatedProcessing, 1);
                     }
+                    if (mapProcessingData.has(lastUpdatedProcessing)) {
+                        mapProcessingData.set(lastUpdatedProcessing, mapProcessingData.get(lastUpdatedProcessing) + 1);
+                    } else {
+                        mapProcessingData.set(lastUpdatedProcessing, 1);
+                    }
                 }
             });
 
-            // Call the group update function of the tracker
+            // Call the group update function of the trackers
             tracker.setSquaresFromMap(mapData);
+            processingTracker.setSquaresFromMap(mapProcessingData);
         });
 
         function updateProgress(name, value, color, generation, method) {
@@ -302,6 +312,25 @@
     </header>
     <div class="main">
         <div class="pokedex">
+            <!-- Processing-only Stats by date (visible by default) -->
+            <div class="tracker-container">
+                <!-- Month labels grid -->
+                <div id="month-labels-processing" class="month-labels"></div>
+                <!-- Tracker grid with left-side week labels -->
+                <div class="tracker-with-labels">
+                <div class="week-labels">
+                    <div class="sun">Sun</div>
+                    <div></div>
+                    <div></div>
+                    <div class="wed">Wed</div>
+                    <div></div>
+                    <div></div>
+                    <div class="sat">Sat</div>
+                </div>
+                <div id="tracker-processing" class="tracker"></div>
+                </div>
+            </div>
+
             <div class="progress-wrapper">
                 <h2>Overall Progress</h2>
                 <div class="progress-container">
@@ -315,6 +344,24 @@
 
             <button class="collapsible">Show/Hide Method Progress</button>
             <div class="content">
+                <!-- Combined Caught + Processing tracker moved into hidden area -->
+                <div class="tracker-container">
+                    <!-- Month labels grid -->
+                    <div id="month-labels" class="month-labels"></div>
+                    <!-- Tracker grid with left-side week labels -->
+                    <div class="tracker-with-labels">
+                    <div class="week-labels">
+                        <div class="sun">Sun</div>
+                        <div></div>
+                        <div></div>
+                        <div class="wed">Wed</div>
+                        <div></div>
+                        <div></div>
+                        <div class="sat">Sat</div>
+                    </div>
+                    <div id="tracker" class="tracker"></div>
+                    </div>
+                </div>
                 {% for method, method_stats in stats.method_stats.items() %}
                 <div class="progress-wrapper">
                     <h2>{{ method }} Progress</h2>
@@ -327,25 +374,6 @@
                     <div class="progress-legend" id="progressLegend-{{ method }}"></div>
                 </div>
                 {% endfor %}
-            </div>
-
-            <!-- Stats by date -->
-            <div class="tracker-container">
-                <!-- Month labels grid -->
-                <div id="month-labels" class="month-labels"></div>
-                <!-- Tracker grid with left-side week labels -->
-                <div class="tracker-with-labels">
-                <div class="week-labels">
-                    <div class="sun">Sun</div>
-                    <div></div>
-                    <div></div>
-                    <div class="wed">Wed</div>
-                    <div></div>
-                    <div></div>
-                    <div class="sat">Sat</div>
-                </div>
-                <div id="tracker" class="tracker"></div>
-                </div>
             </div>
             
             {% set start_id = 1 %}

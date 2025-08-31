@@ -67,6 +67,7 @@ function toggleCaught(event) {
         if (oldDate) {
             tracker.modifySquare(new Date(oldDate), -1);
         }
+        // Do not alter processing-only tracker here; maintained via processing date changes
     }
     savePokemonData({ identifier: identifier, caught: caught, processing: processing, lastUpdatedCaught: lastUpdated, lastUpdatedProcessing: lastUpdatedProcessing });
     showPokemonInfo(identifier, event);
@@ -91,10 +92,12 @@ function toggleProcessing(event) {
     const oldDate = item.getAttribute('lastUpdatedProcessing');
     if (oldDate) {
         tracker.modifySquare(new Date(oldDate), -1);
+        processingTracker && processingTracker.modifySquare(new Date(oldDate), -1);
     }
     if (modifier > 0) {
         const currentDate = new Date().toLocaleDateString('sv-SE').split('T')[0];
         tracker.modifySquare(new Date(currentDate), 1);
+        processingTracker && processingTracker.modifySquare(new Date(currentDate), 1);
         item.setAttribute('lastUpdatedProcessing', currentDate);
         lastUpdated = currentDate;
     }
@@ -219,10 +222,13 @@ function updateDate(field, value) {
         
     }
     else if(field == "lastUpdatedProcessing"){
-        if(currentProcessingDate.length > 0){ tracker.modifySquare(new Date(currentProcessingDate), -1); }
+        if(currentProcessingDate.length > 0){ tracker.modifySquare(new Date(currentProcessingDate), -1); processingTracker && processingTracker.modifySquare(new Date(currentProcessingDate), -1); }
         currentProcessingDate = value
     }
     tracker.modifySquare(new Date(value), 1);
+    if(field == "lastUpdatedProcessing"){
+        processingTracker && processingTracker.modifySquare(new Date(value), 1);
+    }
 }
 
 // Functions for adding a new set of attempt and duration to the running count 

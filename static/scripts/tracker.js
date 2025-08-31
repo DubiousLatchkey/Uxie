@@ -121,6 +121,34 @@ class GreenSquareTracker {
             return;
         }
 
+        // Determine latest activity date to anchor the grid.
+        let latestActivityDate = null;
+        for (const [dateStr] of mapData) {
+            const parsed = new Date(dateStr);
+            if (!isNaN(parsed)) {
+                if (latestActivityDate === null || parsed > latestActivityDate) {
+                    latestActivityDate = parsed;
+                }
+            }
+        }
+
+        if (latestActivityDate !== null) {
+            // Compute the start date as the Sunday of the first week to show,
+            // which is (columns - 1) weeks before the week of the latest activity.
+            const anchor = new Date(latestActivityDate);
+            anchor.setHours(0, 0, 0, 0);
+            const dayOffset = anchor.getDay(); // 0 = Sunday
+            const computedStart = new Date(anchor);
+            computedStart.setDate(anchor.getDate() - dayOffset - (this.columns - 1) * 7);
+
+            const currentStartKey = this.startDate ? this.startDate.toISOString().split('T')[0] : null;
+            const newStartKey = computedStart.toISOString().split('T')[0];
+            if (currentStartKey !== newStartKey) {
+                this.startDate = computedStart;
+                this.initialize();
+            }
+        }
+
         for (const [dateStr, count] of mapData) {
             const date = new Date(dateStr);
             this.updateSquare(date, count);

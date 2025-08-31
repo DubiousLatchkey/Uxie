@@ -3,6 +3,7 @@ import csv
 import os
 import shutil
 import json
+import argparse
 from flask_dance.contrib.github import make_github_blueprint, github
 from dotenv import load_dotenv
 from flask_cors import CORS, cross_origin
@@ -14,6 +15,8 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "supersekrit")
 app.config["GITHUB_OAUTH_CLIENT_ID"] = os.environ.get("GITHUB_OAUTH_CLIENT_ID")
 app.config["GITHUB_OAUTH_CLIENT_SECRET"] = os.environ.get("GITHUB_OAUTH_CLIENT_SECRET")
+# Default unrestricted mode from env; CLI flag can override in __main__
+app.config["UNRESTRICTED_MODE"] = str(os.environ.get("UNRESTRICTED_MODE", "")).lower() in ("1", "true", "yes", "on")
 
 github_blueprint = make_github_blueprint(client_id="Ov23liK6z1gyjZR9MY73", client_secret=app.secret_key)
 app.register_blueprint(github_blueprint, url_prefix="/login")
@@ -74,15 +77,13 @@ pokemons = load_pokemon()
 
 @app.route('/')
 def home():
-    auth = False
-    if(github.authorized):
+    auth = app.config.get("UNRESTRICTED_MODE", False)
+    if not auth and (github.authorized):
         resp = github.get("/user")
         if not resp.ok:
             return "Failed to fetch user info from GitHub", 500
-        
         github_info = resp.json()
         username = github_info.get("login")
-
         if(username == os.environ.get("AUTHORIZED_USER")):
             auth = True
         else:
@@ -204,18 +205,16 @@ def home():
 # Writes data to save.json
 @app.route('/save', methods=['POST'])
 def save_pokemon_data():
-
-    # For saving, check if the user is authenticated and is you
-    if not github.authorized:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    resp = github.get("/user")
-    if not resp.ok:
-        return jsonify({"error": "Failed to fetch user info"}), 500
-
-    username = resp.json().get("login")
-    if username != os.environ.get("AUTHORIZED_USER"):
-        return jsonify({"error": "You are not allowed to write data."}), 403
+    # For saving, check if the user is authenticated unless in unrestricted mode
+    if not app.config.get("UNRESTRICTED_MODE", False):
+        if not github.authorized:
+            return jsonify({"error": "Unauthorized"}), 401
+        resp = github.get("/user")
+        if not resp.ok:
+            return jsonify({"error": "Failed to fetch user info"}), 500
+        username = resp.json().get("login")
+        if username != os.environ.get("AUTHORIZED_USER"):
+            return jsonify({"error": "You are not allowed to write data."}), 403
     
     # Handle save request
     data = request.get_json()
@@ -267,18 +266,16 @@ def download_save():
 # Upload save file
 @app.route('/uploadSave', methods=['POST'])
 def upload_save():
-
-    # For saving, check if the user is authenticated and is you
-    if not github.authorized:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    resp = github.get("/user")
-    if not resp.ok:
-        return jsonify({"error": "Failed to fetch user info"}), 500
-
-    username = resp.json().get("login")
-    if username != os.environ.get("AUTHORIZED_USER"):
-        return jsonify({"error": "You are not allowed to write data."}), 403
+    # For saving, check if the user is authenticated unless in unrestricted mode
+    if not app.config.get("UNRESTRICTED_MODE", False):
+        if not github.authorized:
+            return jsonify({"error": "Unauthorized"}), 401
+        resp = github.get("/user")
+        if not resp.ok:
+            return jsonify({"error": "Failed to fetch user info"}), 500
+        username = resp.json().get("login")
+        if username != os.environ.get("AUTHORIZED_USER"):
+            return jsonify({"error": "You are not allowed to write data."}), 403
 
 
     data = request.get_json()
@@ -301,5 +298,15 @@ def logout():
 
 
 if __name__ == '__main__':
-    serve(app, host="0.0.0.0", port=80)
-    #app.run(host="0.0.0.0", port=80, debug=True)
+    parser = argparse.ArgumentParser(description='Run the Pokedex Tracker app.')
+    parser.add_argument('--unrestricted', action='store_true', help='Disable authentication restrictions for debug purposes')
+    parser.add_argument('--port', type=int, default=80, help='Port to run the server on (default: 80)')
+    parser.add_argument('--host', type=str, default='0.0.0.0', help='Host to bind (default: 0.0.0.0)')
+    args = parser.parse_args()
+
+    # CLI flag overrides env
+    if args.unrestricted:
+        app.config["UNRESTRICTED_MODE"] = True
+
+    #serve(app, host=args.host, port=args.port)
+    app.run(host=args.host, port=args.port, debug=True)
