@@ -231,6 +231,54 @@ function updateDate(field, value) {
     }
 }
 
+// Notes view/edit/save
+function editNotes() {
+    const view = document.getElementById('notes-view');
+    const addContainer = document.getElementById('notes-add');
+    const edit = document.getElementById('notes-edit');
+    const textarea = document.getElementById('notes-textarea');
+    textarea.value = view.textContent || '';
+    view.style.display = 'none';
+    addContainer.style.display = 'none';
+    edit.style.display = 'block';
+}
+
+function cancelNotesEdit() {
+    const view = document.getElementById('notes-view');
+    const addContainer = document.getElementById('notes-add');
+    const edit = document.getElementById('notes-edit');
+    edit.style.display = 'none';
+    if ((view.textContent || '').trim().length === 0) {
+        view.style.display = 'none';
+        addContainer.style.display = 'flex';
+    } else {
+        view.style.display = 'block';
+        addContainer.style.display = 'none';
+    }
+}
+
+function saveNotes() {
+    if (!currentPokemon) return;
+    const textarea = document.getElementById('notes-textarea');
+    const notes = textarea.value;
+    savePokemonData({ identifier: currentPokemon, notes: notes });
+    const view = document.getElementById('notes-view');
+    const addContainer = document.getElementById('notes-add');
+    view.textContent = notes || '';
+    if ((view.textContent || '').trim().length === 0) {
+        view.style.display = 'none';
+        addContainer.style.display = 'flex';
+    } else {
+        view.style.display = 'block';
+        addContainer.style.display = 'none';
+    }
+    cancelNotesEdit();
+}
+
+function addNotes() {
+    editNotes();
+}
+
 // Functions for adding a new set of attempt and duration to the running count 
 
 function textToSeconds(text) {

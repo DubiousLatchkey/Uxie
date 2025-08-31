@@ -528,6 +528,56 @@ so it truly appears centered in the header */
     font-size: 0.9rem;
 }
 
+/* Notes styling */
+.notes {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    margin-bottom: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+}
+
+.notes label {
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.notes .boxed {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #f9f9f9;
+    min-height: 60px;
+    white-space: pre-wrap;
+}
+
+.notes-edit textarea {
+    width: 100%;
+    min-height: 100px;
+    resize: vertical;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 8px;
+    box-sizing: border-box;
+    background: white;
+}
+
+.notes-add-button {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.notes-add-button:hover {
+    background-color: #0056b3;
+}
+
 header {
     background-color: #333;
     padding: 10px 20px;

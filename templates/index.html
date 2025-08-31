@@ -127,7 +127,7 @@
         
 
         // Show the sidebar and load data
-        function showPokemonInfo(pokemon, event) {
+        async function showPokemonInfo(pokemon, event) {
             currentPokemon = pokemon;
             currentMethod = null;
 
@@ -154,144 +154,152 @@
             generations.innerHTML = '';
             methods.innerHTML = '';
 
-            fetch(`/huntMethods/${pokemon}`)
-                .then(response => response.json())
-                .then(data => {
-                    let firstButton = null;
-                    let secondButton = null;
+            try {
+                const [savedData, methodsData] = await Promise.all([
+                    fetch(`/getPokemonData/${pokemon}`).then(response => response.json()),
+                    fetch(`/huntMethods/${pokemon}`).then(response => response.json())
+                ]);
 
-                    Object.keys(data).forEach(gen => {
-                        const button = document.createElement('div');
-                        if(gen == '0') button.textContent = "Go";
-                        else button.textContent = gen;
-                        button.id = gen;
-                        button.classList.add('selector');
-                        button.onclick = () => {
-                            methods.innerHTML = '';
-                            generations.querySelectorAll('.selector').forEach(g => g.classList.remove('selected'));
-                            button.classList.add('selected');
-                            currentGeneration = gen;
+                // Set attempts/time regardless of generation rendering timing
+                document.getElementById('attempts-input').value = savedData.attempts || 0;
+                document.getElementById('duration-input').value = savedData.time || "00:00:00";
+                const attemptsTooltip = document.getElementById('attempt-time-tooltip');
+                if ((savedData.attempts || 0) > 0 && savedData.time) {
+                    const secondsPerAttempt = (textToSeconds(savedData.time) / savedData.attempts).toFixed(2);
+                    attemptsTooltip.textContent = `${convertSecondsToTimeString(secondsPerAttempt)} / attempt`;
+                } else {
+                    attemptsTooltip.textContent = 'No data on average attempt time';
+                }
 
-                            // Ensure "Event/Guarantee" and "Randomly Found" are in the list
-                            if (!data[gen].includes('Event/Guarantee')) {
-                                data[gen].unshift('Event/Guarantee');
+                // Show dates
+                if(savedData.lastUpdatedCaught){
+                    document.getElementById('last-updated-caught').value = savedData.lastUpdatedCaught;
+                    currentCaughtDate = savedData.lastUpdatedCaught
+                }
+                else{
+                    document.getElementById('last-updated-caught').value = ""
+                    currentCaughtDate = ""
+                }
+                if(savedData.lastUpdatedProcessing){
+                    document.getElementById('last-updated-processing').value = savedData.lastUpdatedProcessing;
+                    currentProcessingDate = savedData.lastUpdatedProcessing
+                }
+                else{
+                    document.getElementById('last-updated-processing').value = ""
+                    currentProcessingDate = ""
+                }
+
+                // Build generations/methods UI from methodsData
+                let firstButton = null;
+                let secondButton = null;
+
+                Object.keys(methodsData).forEach(gen => {
+                    const button = document.createElement('div');
+                    if(gen == '0') button.textContent = "Go";
+                    else button.textContent = gen;
+                    button.id = gen;
+                    button.classList.add('selector');
+                    button.onclick = () => {
+                        methods.innerHTML = '';
+                        generations.querySelectorAll('.selector').forEach(g => g.classList.remove('selected'));
+                        button.classList.add('selected');
+                        currentGeneration = gen;
+
+                        // Ensure "Event/Guarantee" and "Randomly Found" are in the list
+                        if (!methodsData[gen].includes('Event/Guarantee')) {
+                            methodsData[gen].unshift('Event/Guarantee');
+                        }
+                        if (!methodsData[gen].includes('Randomly Found')) {
+                            methodsData[gen].unshift('Randomly Found');
+                        }
+
+                        methodsData[gen].forEach(method => {
+                            const methodItem = document.createElement('div');
+                            methodItem.classList.add('selector');
+                            methodItem.textContent = method;
+                            if(method == currentMethod){
+                                methodItem.classList.add('selected');
                             }
-                            if (!data[gen].includes('Randomly Found')) {
-                                data[gen].unshift('Randomly Found');
-                            }
-
-                            data[gen].forEach(method => {
-                                const methodItem = document.createElement('div');
-                                methodItem.classList.add('selector');
-                                methodItem.textContent = method;
-                                if(method == currentMethod){
-                                    methodItem.classList.add('selected');
+                            methodItem.onclick = () => {
+                                methods.querySelectorAll('.selector').forEach(m => m.classList.remove('selected'));
+                                methodItem.classList.add('selected');
+                                currentMethod = method;
+                                savePokemonData({ 
+                                    identifier: currentPokemon, 
+                                    catchGeneration: gen, 
+                                    huntMethod: method 
+                                });
+                                if (!gridItem.classList.contains('caught')) {
+                                    gridItem.classList.add('has-method');
                                 }
-                                methodItem.onclick = () => {
-                                    methods.querySelectorAll('.selector').forEach(m => m.classList.remove('selected'));
-                                    methodItem.classList.add('selected');
-                                    currentMethod = method;
-                                    savePokemonData({ 
-                                        identifier: currentPokemon, 
-                                        catchGeneration: gen, 
-                                        huntMethod: method 
-                                    });
-                                    if (!gridItem.classList.contains('caught')) {
-                                        gridItem.classList.add('has-method');
+                                // Update the progress bars
+                                currentCatchGeneration = gridItem.getAttribute('catchGeneration');
+                                currentHuntMethod = gridItem.getAttribute('huntMethod');
+                                document.querySelectorAll('.progress-bar').forEach(bar => {
+                                    const attribute = bar.getAttribute('data-progress');
+                                    const generationAttribute = bar.getAttribute('catchGeneration');
+                                    if (attribute == currentHuntMethod && generationAttribute == currentCatchGeneration) {
+                                        const newTotal = parseInt(bar.getAttribute('total')) - 1;
+                                        bar.setAttribute('total', newTotal);
+                                        setProgress(attribute, [
+                                            { name: "Caught", value: parseInt(bar.getAttribute("caught")), color: "#6ddd87" }
+                                        ], newTotal);
                                     }
-                                    // Update the progress bars
-                                    currentCatchGeneration = gridItem.getAttribute('catchGeneration');
-                                    currentHuntMethod = gridItem.getAttribute('huntMethod');
-                                    document.querySelectorAll('.progress-bar').forEach(bar => {
-                                        const attribute = bar.getAttribute('data-progress');
-                                        const generationAttribute = bar.getAttribute('catchGeneration');
-                                        if (attribute == currentHuntMethod && generationAttribute == currentCatchGeneration) {
-                                            const newTotal = parseInt(bar.getAttribute('total')) - 1;
-                                            bar.setAttribute('total', newTotal);
-                                            setProgress(attribute, [
-                                                { name: "Caught", value: parseInt(bar.getAttribute("caught")), color: "#6ddd87" },,
-                                            ], newTotal);
-                                        }
-                                        else if (attribute == method && generationAttribute == gen) {
-                                            const newTotal = parseInt(bar.getAttribute('total')) + 1;
-                                            bar.setAttribute('total', newTotal);
-                                            setProgress(attribute, [
-                                                { name: "Caught", value: parseInt(bar.getAttribute("caught")), color: "#6ddd87" },
-                                            ], newTotal);
-                                        }
-                                    });
-                                    gridItem.setAttribute('catchGeneration', gen);
-                                    gridItem.setAttribute('huntMethod', method);
-                                };
-                                methods.appendChild(methodItem);
-                            });
-                        };
+                                    else if (attribute == method && generationAttribute == gen) {
+                                        const newTotal = parseInt(bar.getAttribute('total')) + 1;
+                                        bar.setAttribute('total', newTotal);
+                                        setProgress(attribute, [
+                                            { name: "Caught", value: parseInt(bar.getAttribute("caught")), color: "#6ddd87" },
+                                        ], newTotal);
+                                    }
+                                });
+                                gridItem.setAttribute('catchGeneration', gen);
+                                gridItem.setAttribute('huntMethod', method);
+                            };
+                            methods.appendChild(methodItem);
+                        });
+                    };
 
-                        if (!firstButton) {
-                            firstButton = button;
-                        } else if (!secondButton) {
-                            secondButton = button;
-                        }
-                        generations.appendChild(button);
-                    });
-
-                    // Click the second button by default (ignore the "Go" generation)
-                    if(!currentMethod && secondButton) {
-                        secondButton.click();
+                    if (!firstButton) {
+                        firstButton = button;
+                    } else if (!secondButton) {
+                        secondButton = button;
                     }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
+                    generations.appendChild(button);
                 });
 
-            // Display data if it already exists
-            fetch(`/getPokemonData/${pokemon}`)
-                .then(response => response.json())
-                .then(data => {
-                    // Show hunt method
-                    if (data.catchGeneration && data.huntMethod) {
-                        currentGeneration = data.catchGeneration;
-                        currentMethod = data.huntMethod;
-                        const generationButton = Array.from(generations.children).find(button => button.id == data.catchGeneration);
-                        if (generationButton) {
-                            generationButton.click();
-                            const methodButton = Array.from(methods.children).find(button => button.textContent === data.huntMethod);
-                            if (methodButton) {
-                                methodButton.classList.add('selected');
-                            }
-                            // Set attempts stats
-                            document.getElementById('attempts-input').value = data.attempts || 0;
-                            document.getElementById('duration-input').value = data.time || "00:00:00";
-                            const attemptsTooltip = document.getElementById('attempt-time-tooltip');
-                            if ((data.attempts || 0) > 0 && data.time) {
-                                const secondsPerAttempt = (textToSeconds(data.time) / data.attempts).toFixed(2);
-                                attemptsTooltip.textContent = `${convertSecondsToTimeString(secondsPerAttempt)} / attempt`;
-                            } else {
-                                attemptsTooltip.textContent = 'No data on average attempt time';
-                            }
+                // Populate Notes
+                const notesView = document.getElementById('notes-view');
+                const notesAddButton = document.getElementById('notes-add-button');
+                const notesAddContainer = document.getElementById('notes-add');
+                const trimmedNotes = (savedData.notes || '').trim();
+                notesView.textContent = trimmedNotes;
+                if (trimmedNotes.length === 0) {
+                    notesView.style.display = 'none';
+                    notesAddContainer.style.display = 'flex';
+                } else {
+                    notesView.style.display = 'block';
+                    notesAddContainer.style.display = 'none';
+                }
+
+                // Apply saved selection, or default to the second generation (skip Go)
+                if (savedData.catchGeneration && savedData.huntMethod) {
+                    currentGeneration = savedData.catchGeneration;
+                    currentMethod = savedData.huntMethod;
+                    const generationButton = Array.from(generations.children).find(button => button.id == savedData.catchGeneration);
+                    if (generationButton) {
+                        generationButton.click();
+                        const methodButton = Array.from(methods.children).find(button => button.textContent === savedData.huntMethod);
+                        if (methodButton) {
+                            methodButton.classList.add('selected');
                         }
                     }
-                    // Show dates
-                    if(data.lastUpdatedCaught){
-                        document.getElementById('last-updated-caught').value = data.lastUpdatedCaught;
-                        currentCaughtDate = data.lastUpdatedCaught
-                    }
-                    else{
-                        document.getElementById('last-updated-caught').value = ""
-                        currentCaughtDate = ""
-                    }
-                    if(data.lastUpdatedProcessing){
-                        document.getElementById('last-updated-processing').value = data.lastUpdatedProcessing;
-                        currentProcessingDate = data.lastUpdatedProcessing
-                    }
-                    else{
-                        document.getElementById('last-updated-processing').value = ""
-                        currentProcessingDate = ""
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
+                } else if (!currentMethod && secondButton) {
+                    secondButton.click();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
 
             // Update the Pokémon name in the sidebar
             const capitalizedPokemon = pokemon.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('-');
@@ -474,6 +482,22 @@
                     <div class="date-picker">
                     <label for="last-updated-caught">Finished Processing</label>
                     <input type="date" id="last-updated-caught" onchange="updateDate('lastUpdatedCaught', this.value)">
+                    </div>
+                </div>
+
+                <!-- Notes Section -->
+                <div class="notes">
+                    <label>Notes</label>
+                    <div class="buttons" id="notes-add" style="display:none;">
+                        <button id="notes-add-button" class="notes-add-button" onclick="addNotes()">Add notes</button>
+                    </div>
+                    <div id="notes-view" class="boxed" onclick="editNotes()"></div>
+                    <div id="notes-edit" class="notes-edit boxed" style="display:none;">
+                        <textarea id="notes-textarea" rows="5"></textarea>
+                        <div class="buttons">
+                            <button onclick="saveNotes()">Save</button>
+                            <button onclick="cancelNotesEdit()">Cancel</button>
+                        </div>
                     </div>
                 </div>
             </div>
