@@ -320,8 +320,20 @@
     </header>
     <div class="main">
         <div class="pokedex">
+            <div class="progress-wrapper">
+                <h2>Overall Progress</h2>
+                <div class="progress-container">
+                    <div class="progress-bar" data-progress="overall"
+                    caught="{{ stats.total_caught }}" processing="{{ stats.total_processing }}" 
+                    total="{{ stats.total_pokemon }}" shinyLocked="{{ stats.total_shiny_locked}}"></div>
+                    <div class="progress-total-badge" id="progressTotal-overall"></div>
+                </div>
+                <div class="progress-legend" id="progressLegend-overall"></div>
+            </div>
+
             <!-- Processing-only Stats by date (visible by default) -->
             <div class="tracker-container">
+                <div class="tracker-header">Catch Activity</div>
                 <!-- Month labels grid -->
                 <div id="month-labels-processing" class="month-labels"></div>
                 <!-- Tracker grid with left-side week labels -->
@@ -339,21 +351,11 @@
                 </div>
             </div>
 
-            <div class="progress-wrapper">
-                <h2>Overall Progress</h2>
-                <div class="progress-container">
-                    <div class="progress-bar" data-progress="overall"
-                    caught="{{ stats.total_caught }}" processing="{{ stats.total_processing }}" 
-                    total="{{ stats.total_pokemon }}" shinyLocked="{{ stats.total_shiny_locked}}"></div>
-                    <div class="progress-total-badge" id="progressTotal-overall"></div>
-                </div>
-                <div class="progress-legend" id="progressLegend-overall"></div>
-            </div>
-
             <button class="collapsible">Show/Hide Method Progress</button>
             <div class="content">
                 <!-- Combined Caught + Processing tracker moved into hidden area -->
                 <div class="tracker-container">
+                    <div class="tracker-header">Catch + Processing activity</div>
                     <!-- Month labels grid -->
                     <div id="month-labels" class="month-labels"></div>
                     <!-- Tracker grid with left-side week labels -->
