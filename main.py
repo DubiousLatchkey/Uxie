@@ -297,6 +297,64 @@ def logout():
     return redirect(url_for("home"))  # Redirect to homepage
 
 
+# -------- Stats utilities and route -------- #
+def _parse_time_to_seconds(time_str):
+    """Parses a HH:MM:SS duration string to total seconds. Returns 0 on invalid."""
+    if not time_str or not isinstance(time_str, str):
+        return 0
+    parts = time_str.split(":")
+    if len(parts) != 3:
+        return 0
+    try:
+        hours = int(parts[0])
+        minutes = int(parts[1])
+        seconds = int(parts[2])
+        total_seconds = hours * 3600 + minutes * 60 + seconds
+        return max(total_seconds, 0)
+    except Exception:
+        return 0
+
+
+@app.route('/stats')
+def stats_page():
+    """Renders a stats page with per-method raw data for the frontend to analyze.
+
+    We pass un-aggregated entries so the frontend can compute histograms, std dev,
+    outliers, etc. Entries contain both attempts and time (seconds). Consumers can
+    discard zeros per-dimension and deduplicate on time as needed.
+    """
+    method_to_entries = {}
+
+    for identifier, data in save_data.items():
+        method = data.get('huntMethod')
+        if not method:
+            continue
+        # Raw values; allow frontend to filter zeros and dedupe on time
+        attempts_value = 0
+        time_seconds_value = 0
+        try:
+            attempts_value = int(data.get('attempts', 0) or 0)
+        except Exception:
+            attempts_value = 0
+        time_seconds_value = _parse_time_to_seconds(data.get('time', None))
+
+        entry = {
+            'identifier': identifier,
+            'attempts': attempts_value,
+            'time_seconds': time_seconds_value,
+            'catchGeneration': data.get('catchGeneration', None),
+            'caught': data.get('caught', False),
+            'processing': data.get('processing', False),
+            'shinyLocked': data.get('shinyLocked', False),
+        }
+
+        if method not in method_to_entries:
+            method_to_entries[method] = []
+        method_to_entries[method].append(entry)
+
+    # Render the page with raw JSON injected; frontend script will analyze
+    return render_template('stats.html', method_entries=method_to_entries, auth=app.config.get("UNRESTRICTED_MODE", False) or (github.authorized if 'github' in globals() else False))
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run the Pokedex Tracker app.')
     parser.add_argument('--unrestricted', action='store_true', help='Disable authentication restrictions for debug purposes')

@@ -316,7 +316,10 @@
 <body>
     <header class="header">
         <h1>Pokedex Tracker</h1>
-        <a href="{% if auth %}/logout{% else %}/login/github{% endif %}">{% if auth %}Logout{% else %}Login{% endif %}</a>
+        <div>
+            <a href="/stats" style="margin-right: 12px;">Stats</a>
+            <a href="{% if auth %}/logout{% else %}/login/github{% endif %}">{% if auth %}Logout{% else %}Login{% endif %}</a>
+        </div>
     </header>
     <div class="main">
         <div class="pokedex">
