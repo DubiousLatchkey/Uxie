@@ -8,6 +8,8 @@ from flask_dance.contrib.github import make_github_blueprint, github
 from dotenv import load_dotenv
 from flask_cors import CORS, cross_origin
 from waitress import serve
+from extensions import db
+from models import User, PokemonProgress
 
 load_dotenv() 
 
@@ -15,8 +17,10 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "supersekrit")
 app.config["GITHUB_OAUTH_CLIENT_ID"] = os.environ.get("GITHUB_OAUTH_CLIENT_ID")
 app.config["GITHUB_OAUTH_CLIENT_SECRET"] = os.environ.get("GITHUB_OAUTH_CLIENT_SECRET")
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///uxie.db"
 # Default unrestricted mode from env; CLI flag can override in __main__
 app.config["UNRESTRICTED_MODE"] = str(os.environ.get("UNRESTRICTED_MODE", "")).lower() in ("1", "true", "yes", "on")
+db.init_app(app)
 
 github_blueprint = make_github_blueprint(client_id="Ov23liK6z1gyjZR9MY73", client_secret=app.secret_key)
 app.register_blueprint(github_blueprint, url_prefix="/login")
@@ -366,5 +370,8 @@ if __name__ == '__main__':
     if args.unrestricted:
         app.config["UNRESTRICTED_MODE"] = True
 
+    with app.app_context():
+        db.create_all()
+        
     #serve(app, host=args.host, port=args.port)
     app.run(host=args.host, port=args.port, debug=True)
