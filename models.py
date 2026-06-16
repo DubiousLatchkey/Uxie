@@ -19,7 +19,7 @@ class PokemonProgress(db.Model):
     processing = db.Column(db.Boolean, default=False)
     shiny_locked = db.Column(db.Boolean, default=False)
     hunt_method = db.Column(db.String(120), default="")
-    catch_generation = db.Column(db.String, default=0)
+    catch_generation = db.Column(db.Integer, default=0)
     attempts = db.Column(db.Integer, default=0)
     time = db.Column(db.String(20), default="00:00:00") 
     notes = db.Column(db.Text, default="")
