@@ -10,6 +10,7 @@ from flask_cors import CORS, cross_origin
 from waitress import serve
 from extensions import db
 from models import User, PokemonProgress
+from db_helpers import *
 
 load_dotenv() 
 
@@ -75,23 +76,39 @@ def load_pokemon():
     
     return pokemons
 
+#auth helpers
+def get_current_user():
+    if not github.authorized:
+        return None
+    resp = github.get("/user")
+    if not resp.ok:
+        return None
+    info = resp.json()
+    user = get_or_create_user(info["id"], info["login"])
+    return user
+
+def is_logged_in():
+    return get_current_user() is not None
+
 # encounters_data = load_encounters()
-save_data = load_or_create_save()
+# save_data = load_or_create_save()
 pokemons = load_pokemon()
 
 @app.route('/')
 def home():
-    auth = app.config.get("UNRESTRICTED_MODE", False)
-    if not auth and (github.authorized):
-        resp = github.get("/user")
-        if not resp.ok:
-            return "Failed to fetch user info from GitHub", 500
-        github_info = resp.json()
-        username = github_info.get("login")
-        if(username == os.environ.get("AUTHORIZED_USER")):
-            auth = True
-        else:
-            print(username, " not allowed to write")
+    auth = app.config.get("UNRESTRICTED_MODE", False) or is_logged_in()
+    user = get_current_user()
+    save_data = get_progress_dict(user.id) if user else {}
+    # if not auth and (github.authorized):
+        # resp = github.get("/user")
+        # if not resp.ok:
+        #     return "Failed to fetch user info from GitHub", 500
+        # github_info = resp.json()
+        # username = github_info.get("login")
+        # if(username == os.environ.get("AUTHORIZED_USER")):
+        #     auth = True
+        # else:
+        #     print(username, " not allowed to write")
     
     pokemon_list = []
     total_shiny_locked = 0
@@ -204,21 +221,23 @@ def home():
             "method_stats": method_stats
         }
 
-        return render_template('index.html', pokemons=pokemon_list, stats=stats, auth=auth)
+        return render_template('index.html', pokemons=pokemon_list, stats=stats, auth=auth, current_user=user)
 
 # Writes data to save.json
 @app.route('/save', methods=['POST'])
 def save_pokemon_data():
     # For saving, check if the user is authenticated unless in unrestricted mode
-    if not app.config.get("UNRESTRICTED_MODE", False):
-        if not github.authorized:
-            return jsonify({"error": "Unauthorized"}), 401
-        resp = github.get("/user")
-        if not resp.ok:
-            return jsonify({"error": "Failed to fetch user info"}), 500
-        username = resp.json().get("login")
-        if username != os.environ.get("AUTHORIZED_USER"):
-            return jsonify({"error": "You are not allowed to write data."}), 403
+    # if not app.config.get("UNRESTRICTED_MODE", False):
+        # if not github.authorized:
+        #     return jsonify({"error": "Unauthorized"}), 401
+        # resp = github.get("/user")
+        # if not resp.ok:
+        #     return jsonify({"error": "Failed to fetch user info"}), 500
+        # username = resp.json().get("login")
+        # if username != os.environ.get("AUTHORIZED_USER"):
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "You are not allowed to write data."}), 403
     
     # Handle save request
     data = request.get_json()
@@ -227,25 +246,33 @@ def save_pokemon_data():
     
     pokemon_id = data['identifier']
     
-    if pokemon_id not in save_data:
-        save_data[pokemon_id] = {}
+    # if pokemon_id not in save_data:
+    #     save_data[pokemon_id] = {}
     
-    for key, value in data.items():
-        if key != 'identifier':
-            save_data[pokemon_id][key] = value
-    
-    with open('save.json', 'w') as f:
-        json.dump(save_data, f)
+    # for key, value in data.items():
+    #     if key != 'identifier':
+    #         save_data[pokemon_id][key] = value
+   
+    update_pokemon_progress(user.id, pokemon_id, data)
+    # with open('save.json', 'w') as f:
+    #     json.dump(save_data, f)
     
     return jsonify({"message": "Data saved"})
 
 # Fetches saved data about pokemon
 @app.route('/getPokemonData/<identifier>', methods=['GET'])
 def get_pokemon_data(identifier):
-    if identifier in save_data:
-        return jsonify(save_data[identifier])
-    else:
+    # if identifier in save_data:
+    user = get_current_user()
+    if not user:
+        return jsonify({})
+    pokemon = get_pokemon_progress(user.id, identifier)
+    if not pokemon:
+        # return jsonify(save_data[identifier])
+    # else:
         return jsonify({"message": "Pokemon not found"})
+    else:
+        return jsonify(pokemon)
 
 # Get shiny encounter methods
 @app.route('/huntMethods/<pokemon_name>', methods=['GET'])
@@ -265,32 +292,41 @@ def get_encounter_info(pokemon_name):
 # Download save file
 @app.route('/downloadSave')
 def download_save():
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "You are not allowed to download data."}), 403
+    save_data = get_progress_dict(user.id)
     return jsonify(save_data)
 
 # Upload save file
 @app.route('/uploadSave', methods=['POST'])
 def upload_save():
     # For saving, check if the user is authenticated unless in unrestricted mode
-    if not app.config.get("UNRESTRICTED_MODE", False):
-        if not github.authorized:
-            return jsonify({"error": "Unauthorized"}), 401
-        resp = github.get("/user")
-        if not resp.ok:
-            return jsonify({"error": "Failed to fetch user info"}), 500
-        username = resp.json().get("login")
-        if username != os.environ.get("AUTHORIZED_USER"):
-            return jsonify({"error": "You are not allowed to write data."}), 403
+    # if not app.config.get("UNRESTRICTED_MODE", False):
+        # if not github.authorized:
+        #     return jsonify({"error": "Unauthorized"}), 401
+        # resp = github.get("/user")
+        # if not resp.ok:
+        #     return jsonify({"error": "Failed to fetch user info"}), 500
+        # username = resp.json().get("login")
+        # if username != os.environ.get("AUTHORIZED_USER"):
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "You are not allowed to write data."}), 403
 
 
     data = request.get_json()
     if not data:
         return jsonify({"error": "No data found"}), 400
     
-    with open('save.json', 'w') as f:
-        json.dump(data, f)
+    # with open('save.json', 'w') as f:
+    #     json.dump(data, f)
 
-    global save_data
-    save_data = load_or_create_save()
+    # global save_data
+    # save_data = load_or_create_save()
+   
+    for pokemon_id, progress in data.items():
+        update_pokemon_progress(user.id, pokemon_id, progress)
 
     return jsonify({"message": "Save data uploaded"})
 
@@ -329,6 +365,8 @@ def stats_page():
     """
     method_to_entries = {}
 
+    user = get_current_user()
+    save_data = get_progress_dict(user.id) if user else {}
     for identifier, data in save_data.items():
         method = data.get('huntMethod')
         if not method:
