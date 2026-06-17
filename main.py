@@ -366,5 +366,5 @@ if __name__ == '__main__':
     if args.unrestricted:
         app.config["UNRESTRICTED_MODE"] = True
 
-    #serve(app, host=args.host, port=args.port)
-    app.run(host=args.host, port=args.port, debug=True)
+    serve(app, host=args.host, port=args.port)
+    #app.run(host=args.host, port=args.port, debug=True)
