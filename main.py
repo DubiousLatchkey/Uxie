@@ -23,7 +23,11 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///uxie.db"
 app.config["UNRESTRICTED_MODE"] = str(os.environ.get("UNRESTRICTED_MODE", "")).lower() in ("1", "true", "yes", "on")
 db.init_app(app)
 
-github_blueprint = make_github_blueprint(client_id="Ov23liK6z1gyjZR9MY73", client_secret=app.secret_key)
+github_blueprint = make_github_blueprint(
+    client_id=os.environ["GITHUB_OAUTH_CLIENT_ID"],
+    client_secret=os.environ["GITHUB_OAUTH_CLIENT_SECRET"],
+)
+# github_blueprint = make_github_blueprint(client_id="Ov23liK6z1gyjZR9MY73", client_secret=app.secret_key)
 app.register_blueprint(github_blueprint, url_prefix="/login")
 
 cors = CORS(app)
