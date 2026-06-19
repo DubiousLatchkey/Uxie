@@ -17,12 +17,20 @@ MAP = {
 def progress_row_to_dict(row):
     return {api_key: getattr(row, attr) for api_key, attr in MAP.items()}
 
+def get_user_by_login(github_login):
+    return User.query.filter(
+        db.func.lower(User.github_login) == github_login.lower()
+    ).first()
+
+#gets or creates a user, if the login changes, update it
 def get_or_create_user(github_id, github_login):
     user = User.query.filter_by(github_id=github_id).first()
     if user is None:
         user = User(github_id=github_id, github_login=github_login)
         db.session.add(user)
-        db.session.commit()
+    elif user.github_login != github_login:
+        user.github_login = github_login
+    db.session.commit()
     return user
 
 #return entire save file

@@ -75,10 +75,7 @@ def is_logged_in():
 
 pokemons = load_pokemon()
 
-@app.route('/')
-def home():
-    auth = app.config.get("UNRESTRICTED_MODE", False) or is_logged_in()
-    user = get_current_user()
+def build_tracker_context(user):
     save_data = get_progress_dict(user.id) if user else {}
     
     pokemon_list = []
@@ -192,7 +189,38 @@ def home():
             "method_stats": method_stats
         }
 
-        return render_template('index.html', pokemons=pokemon_list, stats=stats, auth=auth, current_user=user)
+    return pokemon_list, stats
+
+def render_tracker(profile_user, viewer):
+    pokemon_list, stats = build_tracker_context(profile_user)
+    can_edit = (
+        viewer is not None
+        and profile_user is not None
+        and viewer.id == profile_user.id
+    )
+    return render_template(
+        "index.html",
+        pokemons=pokemon_list,
+        stats=stats,
+        can_edit=can_edit,
+        viewer=viewer,
+        profile_user=profile_user,
+    )
+
+@app.route('/')
+def home():
+    auth = app.config.get("UNRESTRICTED_MODE", False) or is_logged_in()
+
+    viewer = get_current_user()
+    return render_tracker(profile_user=viewer, viewer=viewer)
+
+@app.route("/u/<username>")
+def public_profile(username):
+    profile_user = get_user_by_login(username)
+    if profile_user is None:
+        return render_template("404.html"), 404 
+    viewer = get_current_user()
+    return render_tracker(profile_user=profile_user, viewer=viewer)
 
 # Writes data to database based on user id
 @app.route('/save', methods=['POST'])
@@ -214,7 +242,7 @@ def save_pokemon_data():
   
     return jsonify({"message": "Data saved"})
 
-# Fetches saved data about pokemon
+# Fetches your own saved data about pokemon
 @app.route('/getPokemonData/<identifier>', methods=['GET'])
 def get_pokemon_data(identifier):
    
@@ -227,6 +255,15 @@ def get_pokemon_data(identifier):
         return jsonify({"message": "Pokemon not found"})
     else:
         return jsonify(pokemon)
+
+# Fetches saved data about pokemon based on any username
+@app.route("/getPokemonData/<username>/<identifier>", methods=["GET"])
+def get_pokemon_data_public(username, identifier):
+    profile_user = get_user_by_login(username)
+    if profile_user is None:
+        return jsonify({"error": "User not found"}), 404
+    pokemon = get_pokemon_progress(profile_user.id, identifier)
+    return jsonify(pokemon or {})
 
 # Get shiny encounter methods
 @app.route('/huntMethods/<pokemon_name>', methods=['GET'])
@@ -295,18 +332,10 @@ def _parse_time_to_seconds(time_str):
     except Exception:
         return 0
 
-
-@app.route('/stats')
-def stats_page():
-    """Renders a stats page with per-method raw data for the frontend to analyze.
-
-    We pass un-aggregated entries so the frontend can compute histograms, std dev,
-    outliers, etc. Entries contain both attempts and time (seconds). Consumers can
-    discard zeros per-dimension and deduplicate on time as needed.
-    """
+def build_stats(user):
     method_to_entries = {}
 
-    user = get_current_user()
+    # user = get_current_user()
     save_data = get_progress_dict(user.id) if user else {}
     for identifier, data in save_data.items():
         method = data.get('huntMethod')
@@ -334,9 +363,42 @@ def stats_page():
         if method not in method_to_entries:
             method_to_entries[method] = []
         method_to_entries[method].append(entry)
+    return method_to_entries
+    
+def render_stats(profile_user, viewer):
+    method_entries = build_stats(profile_user)
+       
+    return render_template(
+        "stats.html",
+        method_entries=method_entries,
+        viewer=viewer,
+        profile_user=profile_user,
+        auth=app.config.get("UNRESTRICTED_MODE", False) or (github.authorized if 'github' in globals() else False)
+    )
 
+@app.route('/stats')
+
+def stats_page():
+    """Renders a stats page with per-method raw data for the frontend to analyze.
+
+    We pass un-aggregated entries so the frontend can compute histograms, std dev,
+    outliers, etc. Entries contain both attempts and time (seconds). Consumers can
+    discard zeros per-dimension and deduplicate on time as needed.
+    """
+    
     # Render the page with raw JSON injected; frontend script will analyze
-    return render_template('stats.html', method_entries=method_to_entries, auth=app.config.get("UNRESTRICTED_MODE", False) or (github.authorized if 'github' in globals() else False))
+    viewer = get_current_user()
+    if not viewer:
+        return redirect(url_for("home"))  # or render empty / login prompt
+    return render_stats(profile_user=viewer, viewer=viewer)
+
+@app.route("/u/<username>/stats")
+def public_stats(username):
+    profile_user = get_user_by_login(username)
+    if profile_user is None:
+        return render_template("404.html"), 404
+    viewer = get_current_user()
+    return render_stats(profile_user=profile_user, viewer=viewer)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run the Pokedex Tracker app.')
