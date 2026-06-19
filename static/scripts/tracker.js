@@ -100,7 +100,7 @@ class GreenSquareTracker {
             }
         }
     }
-
+    
     modifySquare(date, delta) {
         const dateString = date.toISOString().split('T')[0];
         if (this.squares.has(dateString)) {
@@ -155,4 +155,21 @@ class GreenSquareTracker {
         }
     }
 
+}
+
+//shared helper functions
+function textToSeconds(text) {
+    const [hours, minutes, seconds] = text.split(':').map(Number);
+    return (hours * 3600) + (minutes * 60) + seconds;
+}
+
+function convertSecondsToTimeString(seconds) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    const timeSegments = [];
+    if (h > 0) timeSegments.push(`${h}h`);
+    if (m > 0) timeSegments.push(`${m}m`);
+    if (s > 0 || timeSegments.length === 0) timeSegments.push(`${s}s`);
+    return timeSegments.join(' ');
 }

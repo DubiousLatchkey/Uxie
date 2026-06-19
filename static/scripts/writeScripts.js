@@ -174,16 +174,6 @@ function saveAttempts(event) {
     }
 }
 
-function convertSecondsToTimeString(seconds) {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = Math.floor(seconds % 60);
-    const timeSegments = [];
-    if (h > 0) timeSegments.push(`${h}h`);
-    if (m > 0) timeSegments.push(`${m}m`);
-    if (s > 0 || timeSegments.length === 0) timeSegments.push(`${s}s`);
-    return timeSegments.join(' ');
-}
 
 function clearAttempts(event) {
     document.getElementById('attempts-input').value = 0;
@@ -281,10 +271,6 @@ function addNotes() {
 
 // Functions for adding a new set of attempt and duration to the running count 
 
-function textToSeconds(text) {
-    const [hours, minutes, seconds] = text.split(':').map(Number);
-    return (hours * 3600) + (minutes * 60) + seconds;
-}
 
 function secondsToText(seconds) {
     const hours = Math.floor(seconds / 3600);

@@ -218,6 +218,9 @@
                     else button.textContent = gen;
                     button.id = gen;
                     button.classList.add('selector');
+                    if (!CAN_EDIT) {
+                        button.style.pointerEvents = 'none';
+                    }
                     button.onclick = () => {
                         methods.innerHTML = '';
                         generations.querySelectorAll('.selector').forEach(g => g.classList.remove('selected'));
@@ -516,31 +519,33 @@
                     <div class="attempts-time-container boxed">
                         <div class="input-group">
                             <span>Attempts</span>
-                            <input type="number" id="attempts-input" min="0" value="0">
+                            <input type="number" id="attempts-input" min="0" value="0" {% if not can_edit %}disabled{% endif %}>
                         </div>
                         <div class="input-group">
                             <span class="tooltip-container">Time<div id="attempt-time-tooltip" class="tooltip"> Seconds per attempt</div></span>
                             
-                            <input type="text" id="duration-input" class="html-duration-picker" data-duration="00:00:00">
+                            <input type="text" id="duration-input" class="html-duration-picker" data-duration="00:00:00" {% if not can_edit %}disabled{% endif %}>
                         </div>
                     </div>
                 </div>
-
+                
+                {% if can_edit %}
                 <div class="buttons">
-                    <button {% if can_edit %} onclick="saveAttempts(event)" {% endif %} >Save</button>
-                    <button {% if can_edit %} onclick="clearAttempts(event)" {% endif %} >Clear</button>
-                    <button {% if can_edit %} onclick="openTimeModal(event)" {% endif %} >Add</button>
+                    <button onclick="saveAttempts(event)" >Save</button>
+                    <button onclick="clearAttempts(event)"  >Clear</button>
+                    <button onclick="openTimeModal(event)"  >Add</button>
                 </div>
+                {% endif %}
 
                 <!-- Date Pickers Section -->
                 <div class="date-pickers">
                     <div class="date-picker">
                     <label for="last-updated-processing">Caught</label>
-                    <input type="date" id="last-updated-processing" onchange="updateDate('lastUpdatedProcessing', this.value)">
-                    </div>
+                    <input type="date" id="last-updated-processing" {% if can_edit %} onchange="updateDate('lastUpdatedProcessing', this.value)" {% else %} disabled {% endif %} >
+                </div>
                     <div class="date-picker">
                     <label for="last-updated-caught">Finished Processing</label>
-                    <input type="date" id="last-updated-caught" onchange="updateDate('lastUpdatedCaught', this.value)">
+                    <input type="date" id="last-updated-caught" {% if can_edit %} onchange="updateDate('lastUpdatedCaught', this.value)" {% else %} disabled {% endif %}>
                     </div>
                 </div>
 
@@ -548,7 +553,9 @@
                 <div class="notes">
                     <label>Notes</label>
                     <div class="buttons" id="notes-add" style="display:none;">
+                        {% if can_edit %}
                         <button id="notes-add-button" class="notes-add-button" onclick="addNotes()">Add notes</button>
+                        {% endif %}
                     </div>
                     <div id="notes-view" class="boxed" onclick="editNotes()"></div>
                     <div id="notes-edit" class="notes-edit boxed" style="display:none;">

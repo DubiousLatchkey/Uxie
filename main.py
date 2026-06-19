@@ -11,6 +11,7 @@ from waitress import serve
 from extensions import db
 from models import User, PokemonProgress
 from db_helpers import *
+from oauthlib.oauth2.rfc6749.errors import TokenExpiredError
 
 load_dotenv() 
 
@@ -63,8 +64,10 @@ def load_pokemon():
 def get_current_user():
     if not github.authorized:
         return None
-    resp = github.get("/user")
-    if not resp.ok:
+    try:
+        resp = github.get("/user")
+    except TokenExpiredError:
+        session.pop("github_oauth_token", None)
         return None
     info = resp.json()
     user = get_or_create_user(info["id"], info["login"])
@@ -191,10 +194,11 @@ def build_tracker_context(user):
 
     return pokemon_list, stats
 
-def render_tracker(profile_user, viewer):
+def render_tracker(profile_user, viewer, *, public_view=False):
     pokemon_list, stats = build_tracker_context(profile_user)
     can_edit = (
-        viewer is not None
+        not public_view 
+        and viewer is not None
         and profile_user is not None
         and viewer.id == profile_user.id
     )
@@ -212,7 +216,7 @@ def home():
     auth = app.config.get("UNRESTRICTED_MODE", False) or is_logged_in()
 
     viewer = get_current_user()
-    return render_tracker(profile_user=viewer, viewer=viewer)
+    return render_tracker(profile_user=viewer, viewer=viewer, public_view=False)
 
 @app.route("/u/<username>")
 def public_profile(username):
@@ -220,7 +224,7 @@ def public_profile(username):
     if profile_user is None:
         return render_template("404.html"), 404 
     viewer = get_current_user()
-    return render_tracker(profile_user=profile_user, viewer=viewer)
+    return render_tracker(profile_user=profile_user, viewer=viewer, public_view=True)
 
 # Writes data to database based on user id
 @app.route('/save', methods=['POST'])
