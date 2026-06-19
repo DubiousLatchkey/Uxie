@@ -15,9 +15,18 @@
 </head>
 <body>
     <header class="header">
-        <h1>Hunt Method Statistics</h1>
+        {% if profile_user %}
+            <h1>{{ profile_user.github_login }}'s Hunt Method Statistics</h1>
+        {% else %}
+            <h1>Hunt Method Statistics</h1>
+        {% endif %}
+
         <div>
-            <a href="/">Home</a>
+            {% if profile_user %}
+                <a href="/u/{{ profile_user.github_login }}">Back to Pokedex</a>
+            {% else %}
+                <a href="/">Back to Pokedex</a>
+            {% endif %}
         </div>
     </header>
 

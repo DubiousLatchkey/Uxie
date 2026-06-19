@@ -14,9 +14,14 @@
     <script src="{{ url_for('static', filename='scripts/html-duration-picker.min.js') }}"></script>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/index.css') }}">
+    {% if can_edit %}
     <script src="{{ url_for('static', filename='scripts/writeScripts.js') }}"></script>
+    {% endif %}
 
     <script>
+        const PROFILE_USERNAME = {{ profile_user.github_login | tojson if profile_user else 'null' }};
+        const CAN_EDIT = {{ can_edit | tojson }};
+
         let currentPokemon = null;
         let currentGeneration = null;
         let currentMethod = null;
@@ -27,6 +32,16 @@
 
         function isMobileDevice() {
             return (window.innerWidth <= 768 || navigator.maxTouchPoints > 0);
+        }
+
+        function copyShareLink() {
+        if (!PROFILE_USERNAME) return;
+        const url = `${window.location.origin}/u/${PROFILE_USERNAME}`;
+        navigator.clipboard.writeText(url)
+            .then(() => alert('Link copied!'))
+            .catch(() => {
+                prompt('Copy this link:', url);
+            });
         }
 
         document.addEventListener("DOMContentLoaded", function () {
@@ -155,8 +170,12 @@
             methods.innerHTML = '';
 
             try {
+                const dataUrl = PROFILE_USERNAME
+                    ? `/getPokemonData/${PROFILE_USERNAME}/${pokemon}`
+                    : `/getPokemonData/${pokemon}`;
+
                 const [savedData, methodsData] = await Promise.all([
-                    fetch(`/getPokemonData/${pokemon}`).then(response => response.json()),
+                    fetch(dataUrl).then(response => response.json()),
                     fetch(`/huntMethods/${pokemon}`).then(response => response.json())
                 ]);
 
@@ -221,6 +240,7 @@
                                 methodItem.classList.add('selected');
                             }
                             methodItem.onclick = () => {
+                                if (!CAN_EDIT) return;
                                 methods.querySelectorAll('.selector').forEach(m => m.classList.remove('selected'));
                                 methodItem.classList.add('selected');
                                 currentMethod = method;
@@ -315,12 +335,46 @@
 </head>
 <body>
     <header class="header">
-        <h1>Pokedex Tracker</h1>
-        <div>
-            <a href="/stats" style="margin-right: 12px;">Stats</a>
-            <a href="{% if auth %}/logout{% else %}/login/github{% endif %}">{% if auth %}Logout ({{ current_user.github_login }}) {% else %}Login{% endif %}</a>
+        {% if profile_user and viewer and viewer.id != profile_user.id %}
+            <h1>{{ profile_user.github_login }}'s Pokedex</h1>
+        {% else %}
+            <h1>Pokedex Tracker</h1>
+        {% endif %}
+
+        <div class="header-actions">
+            {# Stats link — points at whose data you're viewing #}
+            {% if profile_user %}
+                <a href="/u/{{ profile_user.github_login }}/stats">Stats</a>
+            {% else %}
+                <a href="/stats">Stats</a>
+            {% endif %}
+
+            {# Logged in, editing on / #}
+            {% if can_edit %}
+                <a href="/u/{{ viewer.github_login }}">View mode</a>
+                <button type="button" class="header-btn" onclick="copyShareLink()">Copy link</button>
+            {% endif %}
+
+            {# Logged in, viewing your own public page on /u/you #}
+            {% if viewer and profile_user and not can_edit and viewer.id == profile_user.id %}
+                <a href="/">Edit mode</a>
+                <button type="button" class="header-btn" onclick="copyShareLink()">Copy link</button>
+            {% endif %}
+
+            {# Logged in, viewing someone else's profile #}
+            {% if viewer and profile_user and viewer.id != profile_user.id %}
+                <a href="/">Back to my tracker</a>
+            {% endif %}
+
+            {# Auth link #}
+            {% if viewer %}
+                <a href="/logout">Logout ({{ viewer.github_login }})</a>
+            {% else %}
+                <a href="/login/github">Login</a>
+            {% endif %}
         </div>
     </header>
+    
     <div class="main">
         <div class="pokedex">
             <div class="progress-wrapper">
@@ -397,7 +451,7 @@
                         huntMethod="{{ pokemon.huntMethod }}" catchGeneration="{{ pokemon.catchGeneration }}"
                         lastUpdatedProcessing="{{ pokemon.lastUpdatedProcessing }}" lastUpdatedCaught="{{ pokemon.lastUpdatedCaught }}"
                         attempts="{{ pokemon.attempts}}"
-                        {% if auth %} onclick="toggleCaught(event)" {% endif %}>
+                        {% if can_edit %} onclick="toggleCaught(event)" {% endif %}>
                         <p class="identifier">{{ pokemon.identifier | capitalize }}</p>
                         <div class="sprite {{ pokemon.sprite_id }}"></div>
                         <p class="id">#{{ pokemon.id }}</p>
@@ -405,7 +459,7 @@
                         <!-- Info icon (bottom-right) -->
                         <span class="info-icon" onclick="event.stopPropagation(); showPokemonInfo('{{ pokemon.identifier }}', event)">ℹ️</span>
                         
-                        {% if auth %}
+                        {% if can_edit %}
                         <!-- Processing icon (bottom-left) -->
                         <span class="process-icon" onclick="toggleProcessing(event)">📋</span>
 
@@ -452,8 +506,8 @@
                         </div>
                     </div>
                     <div class="buttons">
-                        <button id="save-additional" {% if auth %} onclick="addAndSave(event)" {% endif %}>Add and Save</button>
-                        <button id="close-modal" {% if auth %} onclick="closeTimeModal(event)" {% endif %}>Cancel</button>
+                        <button id="save-additional" {% if can_edit %} onclick="addAndSave(event)" {% endif %}>Add and Save</button>
+                        <button id="close-modal" {% if can_edit %} onclick="closeTimeModal(event)" {% endif %}>Cancel</button>
                     </div>
                 </div>
 
@@ -473,9 +527,9 @@
                 </div>
 
                 <div class="buttons">
-                    <button {% if auth %} onclick="saveAttempts(event)" {% endif %} >Save</button>
-                    <button {% if auth %} onclick="clearAttempts(event)" {% endif %} >Clear</button>
-                    <button {% if auth %} onclick="openTimeModal(event)" {% endif %} >Add</button>
+                    <button {% if can_edit %} onclick="saveAttempts(event)" {% endif %} >Save</button>
+                    <button {% if can_edit %} onclick="clearAttempts(event)" {% endif %} >Clear</button>
+                    <button {% if can_edit %} onclick="openTimeModal(event)" {% endif %} >Add</button>
                 </div>
 
                 <!-- Date Pickers Section -->
