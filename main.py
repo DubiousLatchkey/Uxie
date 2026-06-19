@@ -369,13 +369,14 @@ def build_stats(user):
         method_to_entries[method].append(entry)
     return method_to_entries
     
-def render_stats(profile_user, viewer):
+def render_stats(profile_user, viewer, *, public_view=False):
     method_entries = build_stats(profile_user)
        
     return render_template(
         "stats.html",
         method_entries=method_entries,
         viewer=viewer,
+        public_view=public_view,
         profile_user=profile_user,
         auth=app.config.get("UNRESTRICTED_MODE", False) or (github.authorized if 'github' in globals() else False)
     )
@@ -402,7 +403,7 @@ def public_stats(username):
     if profile_user is None:
         return render_template("404.html"), 404
     viewer = get_current_user()
-    return render_stats(profile_user=profile_user, viewer=viewer)
+    return render_stats(profile_user=profile_user, viewer=viewer, public_view=True)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run the Pokedex Tracker app.')

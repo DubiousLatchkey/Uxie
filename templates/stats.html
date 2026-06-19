@@ -15,14 +15,14 @@
 </head>
 <body>
     <header class="header">
-        {% if profile_user %}
+        {% if public_view %}
             <h1>{{ profile_user.github_login }}'s Hunt Method Statistics</h1>
         {% else %}
             <h1>Hunt Method Statistics</h1>
         {% endif %}
 
         <div>
-            {% if profile_user %}
+            {% if public_view %}
                 <a href="/u/{{ profile_user.github_login }}">Back to Pokedex</a>
             {% else %}
                 <a href="/">Back to Pokedex</a>
